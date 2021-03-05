@@ -4,32 +4,32 @@ public class Node implements Comparable<Node> {
     private int totalScore;
     private int distanceScore;
     private int scoreFromStart;
-    private int xPos;
-    private int yPos;
+    private int row;
+    private int column;
     private String id;
 
-    public Node(int x, int y) {
+    public Node(int row, int column) {
         walkable = true;
-        xPos = x;
-        yPos = y;
-        id = generateID(x, y);
+        this.row = row;
+        this.column = column;
+        id = generateID(row, column);
     }
 
     public Node(Node node) {
         walkable = node.isWalkable();
-        xPos = node.getxPos();
-        yPos = node.getyPos();
+        row = node.getRow();
+        column = node.getColumn();
         id = node.getId();
         distanceScore = node.getDistanceScore();
     }
 
-    public int getxPos() {
-        return xPos;
+    public int getRow() {
+        return row;
     }
 
 
-    public int getyPos() {
-        return yPos;
+    public int getColumn() {
+        return column;
     }
 
 
@@ -57,7 +57,7 @@ public class Node implements Comparable<Node> {
         if (parent == null) {
             scoreFromStart = 0;
         } else {
-        this.scoreFromStart = parent.getTotalScore() + 1;
+            this.scoreFromStart = parent.getTotalScore() + 1;
         }
     }
 
@@ -71,8 +71,9 @@ public class Node implements Comparable<Node> {
     }
 
 
-    public void calcDistanceScore (Node destination){
-        distanceScore =  (int) (Math.pow((destination.getxPos() - this.xPos), 2) + Math.pow((destination.getyPos() - this.yPos), 2));
+    public void calcDistanceScore(Node destination) {
+        distanceScore = (int) (Math.pow((destination.getRow() - this.row), 2) +
+                Math.pow((destination.getColumn() - this.column), 2));
     }
 
     // Works better if scoreFromStart is not taken into account
@@ -80,8 +81,8 @@ public class Node implements Comparable<Node> {
         totalScore = distanceScore + scoreFromStart;
     }
 
-    private String generateID(int x, int y) {
-        return String.valueOf(0.5*(x + y)*(x + y + 1) + y);
+    private String generateID(int row, int column) {
+        return String.valueOf(0.5 * (row + column) * (row + column + 1) + column);
     }
 
     @Override

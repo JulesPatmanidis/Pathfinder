@@ -35,11 +35,10 @@ public class AStarPathfinder extends Pathfinder {
         Node currentNode;
 
         while (!openQueue.isEmpty()) {
-            currentBlock = openQueue.peek();  //Get minimum score node
+            currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list (poll = pop)
             currentNode = currentBlock.getNode();
             //System.out.println(currentBlock.getNode().getTotalScore());
 
-            openQueue.remove(currentBlock);
 
             /* if current node is the destination, generate route and return it */
             if (currentNode.getId().equals(gui.getEnd().getNode().getId())) {
@@ -71,7 +70,8 @@ public class AStarPathfinder extends Pathfinder {
                 }
 
                 /* if the neighbour is already in open list or closed list through a shorter path, skip it */
-                if (openQueue.contains(neighbourBlock) &&
+                // IMPLEMENT OWN VERSION OF QUEUE TO HAVE CUSTOM CONTAINS METHOD, THIS DOES NOT WORK
+                if (queueContains(openQueue, neighbourBlock) &&
                         costSoFar.get(neighbourNode.getId()) < neighbourNode.getScoreFromStart())
                 {
                     continue;
@@ -84,7 +84,7 @@ public class AStarPathfinder extends Pathfinder {
 
                 openQueue.add(neighbourBlock);
                 costSoFar.put(neighbourNode.getId(),neighbourNode.getScoreFromStart());
-                System.out.printf("node added, x: %d, y: %d\n",neighbourBlock.getNode().getxPos(), neighbourBlock.getNode().getyPos());
+                System.out.printf("node added, row: %d, column: %d\n",neighbourBlock.getNode().getRow(), neighbourBlock.getNode().getColumn());
             }
         }
         //System.out.println("Path not found");
@@ -123,6 +123,7 @@ public class AStarPathfinder extends Pathfinder {
             for (Block neighbourBlock : neighbours) {
                 Node neighbourNode = neighbourBlock.getNode();
                 /* init neighbour scores*/
+
                 neighbourNode.calcDistanceScore(gui.getEnd().getNode());
                 neighbourNode.calcScoreFromStart(currentBlock.getNode());
                 neighbourNode.calcTotalScore();
@@ -143,19 +144,19 @@ public class AStarPathfinder extends Pathfinder {
                 {
                     continue;
                 }
-
+                // Maybe remove block already in openList but with greater score
                 openList.add(neighbourBlock);
                 costSoFar.put(neighbourNode.getId(),neighbourNode.getScoreFromStart());
-                System.out.printf("node added, x: %d, y: %d\n",neighbourBlock.getNode().getxPos(), neighbourBlock.getNode().getyPos());
+                System.out.printf("node added, x: %d, y: %d\n",neighbourBlock.getNode().getColumn(), neighbourBlock.getNode().getRow());
             }
         }
         //System.out.println("Path not found");
         return List.of(gui.getEnd());
     }
 
-    public boolean queueContains(PriorityQueue<Block> queue, String id) {
+    public boolean queueContains(PriorityQueue<Block> queue, Block block) {
         Stream<String> streamId = queue.stream().map(Block::getNode).map(Node::getId);
-        return streamId.anyMatch(x->x.equals(id));
+        return streamId.anyMatch(x->x.equals(block.getNode().getId()));
     }
 
     /**
@@ -187,12 +188,12 @@ public class AStarPathfinder extends Pathfinder {
         }
 
         List<Block> neighbours = new ArrayList<>();
-        int x = parentBlock.getNode().getxPos();
-        int y = parentBlock.getNode().getyPos();
+        int x = parentBlock.getNode().getRow();
+        int y = parentBlock.getNode().getColumn();
 
         int dim = gui.getBlocks().size();
 
-        for (List<Integer> vector : DISPLACEMENT_LIST_2) {
+        for (List<Integer> vector : DISPLACEMENT_LIST) {
             int tempX = vector.get(0);
             int tempY = vector.get(1);
             if (isValid(x + tempX, y + tempY)) {
@@ -200,7 +201,7 @@ public class AStarPathfinder extends Pathfinder {
                 Block tempBlock = gui.getBlocks().get(x + tempX).get(y +tempY);
                 if (tempBlock.getNode().isWalkable()){
                     Block newBlock = new Block(tempBlock);
-                    newBlock.getNode().setScoreFromStart(parentBlock.getNode().getScoreFromStart() + 1);
+                   // Colour
                     try {
                         SwingUtilities.invokeAndWait(() -> newBlock.getButton().setBackground(Gui.CHECKED_COLOR));
                     } catch (InterruptedException e) {
@@ -210,13 +211,18 @@ public class AStarPathfinder extends Pathfinder {
                         System.err.println("Error: " + e.getMessage());
                         e.printStackTrace();
                     }
+                    // Score
+                    newBlock.getNode().setScoreFromStart(parentBlock.getNode().getScoreFromStart() + 1);
+                    // Parent
                     newBlock.setParentBlock(parentBlock);
+                    // Add to neighbours
                     neighbours.add(newBlock);
                 }
             }
         }
         return neighbours;
     }
+
 
 
 }

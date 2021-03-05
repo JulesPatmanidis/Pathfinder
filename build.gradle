@@ -5,7 +5,7 @@ plugins {
 group 'Pathfinder'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.8
+
 
 repositories {
     mavenCentral()

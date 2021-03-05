@@ -7,9 +7,9 @@ public class Block implements Comparable<Block>{
     private Node node;
     private transient Block parentBlock;
 
-    public Block(int x, int y) {
+    public Block(int row, int column) {
         button = new JButton();
-        node = new Node(x, y);
+        node = new Node(row, column);
     }
 
 

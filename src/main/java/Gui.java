@@ -11,7 +11,7 @@ public class Gui extends JFrame {
 
     /** CONSTANTS **/
     private static final String FRAME_TITLE = "Pathfinder";
-    private static final int BLOCK_NUMBER = 60; //50
+    private static final int BLOCK_NUMBER = 50; //50
     private static final int BUTTON_DIM = 18;    //15
     //private static final Dimension DIMENSION = new Dimension(BLOCK_NUMBER * BUTTON_DIM,BLOCK_NUMBER * BUTTON_DIM);
     private static final int ROUTE_PAINT_DELAY = 8;
@@ -111,6 +111,7 @@ public class Gui extends JFrame {
                 mainPanel.add(current.getButton());
             }
         }
+        blocksList.get(0).get(1).getButton().setBackground(Color.green);
     }
 
 
