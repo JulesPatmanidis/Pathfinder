@@ -3,22 +3,23 @@ import java.util.PriorityQueue;
 
 public class test {
     public static void main(String[] args) {
-        Gui gui = new Gui();
-        AStarPathfinder pathfinder = new AStarPathfinder(gui);
-//        Block block1 = new Block(5,5);
-//
-//        PriorityQueue<Block> openQueue = new PriorityQueue<>();
-//        for (int i = 0 ; i < 11 ; i++) {
-//            Block temp = new Block(i,2);
-//            openQueue.add(temp);
-//        }
+//        AStarPathfinder pathfinder = new AStarPathfinder();
+//        Gui gui = new Gui();
+//        Block block1 = pathfinder.getBlocks().get(0).get(0);
+        PriorityQueue<Integer> queue = new PriorityQueue<>();
+        Integer a = 1;
+        Integer b = 2;
+        Integer c = 3;
+        Integer d = 4;
+        queue.add(a);
+        queue.add(b);
+        queue.add(c);
+        queue.add(d);
 
-        Hashtable<String,Integer> hashTable = new Hashtable<>();
-        hashTable.put("a",  1);
-        hashTable.put("b", 5);
-        System.out.println(hashTable.get("a"));
-        hashTable.put("a", 9);
-        System.out.println(hashTable.get("a"));
 
+
+        for (int i = 0; i < 4; i++) {
+            System.out.println(queue.poll());
+        }
     }
 }

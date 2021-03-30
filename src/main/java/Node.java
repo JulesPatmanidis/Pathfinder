@@ -1,9 +1,9 @@
 public class Node implements Comparable<Node> {
     private boolean walkable;
     //private Block block;
-    private int totalScore;
-    private int distanceScore;
-    private int scoreFromStart;
+    private double totalScore;
+    private double distanceScore;
+    private double scoreFromStart = Double.MAX_VALUE;
     private int row;
     private int column;
     private String id;
@@ -15,13 +15,13 @@ public class Node implements Comparable<Node> {
         id = generateID(row, column);
     }
 
-    public Node(Node node) {
-        walkable = node.isWalkable();
-        row = node.getRow();
-        column = node.getColumn();
-        id = node.getId();
-        distanceScore = node.getDistanceScore();
-    }
+//    public Node(Node node) {
+//        walkable = node.isWalkable();
+//        row = node.getRow();
+//        column = node.getColumn();
+//        id = node.getId();
+//        distanceScore = node.getDistanceScore();
+//    }
 
     public int getRow() {
         return row;
@@ -37,27 +37,28 @@ public class Node implements Comparable<Node> {
         return id;
     }
 
-    public int getTotalScore() {
+    public double getTotalScore() {
         return totalScore;
     }
 
-    public int getDistanceScore() {
+    public double getDistanceScore() {
         return distanceScore;
     }
 
-    public int getScoreFromStart() {
+    public double getScoreFromStart() {
         return scoreFromStart;
     }
 
-    public void setScoreFromStart(int scoreFromStart) {
+    public void setScoreFromStart(double scoreFromStart) {
         this.scoreFromStart = scoreFromStart;
     }
 
     public void calcScoreFromStart(Node parent) {
         if (parent == null) {
             scoreFromStart = 0;
+            throw new NullPointerException("Error: Score for node without parent was attempted to be calculated.");
         } else {
-            this.scoreFromStart = parent.getTotalScore() + 1;
+            scoreFromStart = parent.scoreFromStart + calcEuclidDistanceTo(parent);
         }
     }
 
@@ -72,14 +73,25 @@ public class Node implements Comparable<Node> {
 
 
     public void calcDistanceScore(Node destination) {
-        distanceScore = (int) (Math.pow((destination.getRow() - this.row), 2) +
-                Math.pow((destination.getColumn() - this.column), 2));
+        distanceScore = calcEuclidDistanceTo(destination);
     }
 
-    // Works better if scoreFromStart is not taken into account
-    public void calcTotalScore() {
-        totalScore = distanceScore + scoreFromStart;
+    public double calcEuclidDistanceTo(Node destination) {
+        return Math.sqrt(
+                Math.pow((destination.getRow() - this.row), 2) + Math.pow((destination.getColumn() - this.column), 2)
+        );
     }
+
+    public void calcTotalScoreAStar() {
+        totalScore = scoreFromStart + distanceScore;
+        //totalScore = scoreFromStart;
+        //totalScore = distanceScore;
+    }
+
+    public void calcTotalScoreDfs() {
+        totalScore = scoreFromStart;
+    }
+
 
     private String generateID(int row, int column) {
         return String.valueOf(0.5 * (row + column) * (row + column + 1) + column);

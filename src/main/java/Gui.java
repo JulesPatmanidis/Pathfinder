@@ -34,12 +34,11 @@ public class Gui extends JFrame {
     private JLabel text;
     private JPanel mainPanel;
     private JPanel topPanel;
-    private Block start;
-    private Block end;
-    private List<List<Block>> blocksList;
     private int clickCount = 0;
     private JButton resetButton;
     private Dimension dimension = new Dimension(BLOCK_NUMBER * BUTTON_DIM,(int) (BLOCK_NUMBER * BUTTON_DIM * getAspectRatio()));
+
+    private Pathfinder pathfinder;
     //private boolean analyticView;
 
 
@@ -87,12 +86,12 @@ public class Gui extends JFrame {
 
 
         mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayout(BLOCK_NUMBER, BLOCK_NUMBER, 0 ,0));
+        mainPanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) Math.round(BLOCK_NUMBER * getAspectRatio()), 0 ,0));
         mainPanel.setBorder(MAIN_BORDER);
         mainPanel.setBackground(BACKGROUND);
-        addBlocks();
         add(mainPanel, BorderLayout.CENTER);
 
+        selectPathfinder();
 
     }
 
@@ -100,30 +99,40 @@ public class Gui extends JFrame {
      * Adds JButtons to the mainPanel
      */
     private void addBlocks() {
-
-        blocksList = new ArrayList<>();
+        List<List<Block>> tempList = new ArrayList<>();
         for (int i = 0; i < BLOCK_NUMBER; i++) {
-            blocksList.add(i, new ArrayList<>());
+            tempList.add(i, new ArrayList<>());
             for (int j = 0; j < BLOCK_NUMBER * getAspectRatio(); j++) {
                 Block current = new Block(i, j);
-                initializeBlock(current);
-                blocksList.get(i).add(j, current);
+                initializeBlockButton(current);
+                tempList.get(i).add(j, current);
                 mainPanel.add(current.getButton());
             }
         }
-        blocksList.get(0).get(1).getButton().setBackground(Color.green);
+        pathfinder.setBlocksList(tempList);
+    }
+
+    // CHANGE LATER
+    private void selectPathfinder() {
+        this.pathfinder = new AStarPathfinder();
+        System.out.println("SelectPathfinder");
+        System.out.println(pathfinder.toString());
+        addBlocks();
+    }
+
+    public Pathfinder getPathfinder() {
+        return pathfinder;
+    }
+
+    public void setPathfinder(Pathfinder pathfinder) {
+        this.pathfinder = pathfinder;
     }
 
 
-    public List<List<Block>> getBlocks() {return blocksList;}
+//    public Block getEnd() {
+//        return end;
+//    }
 
-    public Block getStart() {
-        return start;
-    }
-
-    public Block getEnd() {
-        return end;
-    }
 
     public Dimension getDimension() {
         return dimension;
@@ -132,25 +141,34 @@ public class Gui extends JFrame {
      * Initializes the JButton on the blocks array.
      * @param block
      */
-    private void initializeBlock(Block block) {
+    public void initializeBlockButton(Block block) {
         block.getButton().setBackground(BLOCK_COLOR);
         block.getButton().setPreferredSize(new Dimension(BUTTON_DIM, BUTTON_DIM));
         block.getButton().setBorder(BorderFactory.createLineBorder(BLOCK_BORDER_COLOR));
+        String text = "" + block.getNode().getRow() + ", " + block.getNode().getColumn();
+//        block.getButton().setText(text);
+//        block.getButton().setForeground(Color.WHITE);
         block.getButton().addActionListener(e -> {
             block.getButton().setBackground(PRESSED_COLOR);
 
             clickCount++;
             if (clickCount == 1) {
-                start = block;
+                pathfinder.setStart(block);
+                System.out.println("Start is set");
+                System.out.println(pathfinder.getStart().toString());
             }
             if (clickCount == 2) {
-                end = block;
+                pathfinder.setEnd(block);
                 goToClickState();
+                System.out.println("End is set");
             }
         });
     }
 
 
+    public <T extends JComponent> void addToMainPanel(T t) {
+        mainPanel.add(t);
+    }
 
 
     private void updateBlockClick(Block block) {
@@ -186,7 +204,7 @@ public class Gui extends JFrame {
             }
         });
 
-        blocksList.stream().flatMap(List::stream).forEach(this::updateBlockClick);
+        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockClick);
     }
 
     private void updateBlockHover(Block block) {
@@ -209,7 +227,7 @@ public class Gui extends JFrame {
     }
 
     private void goToHoverState() {
-        blocksList.stream().flatMap(List::stream).forEach(this::updateBlockHover);
+        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockHover);
     }
 
     private void updateBlockFinal(Block block) {
@@ -220,9 +238,9 @@ public class Gui extends JFrame {
 
         text.setText("Pathfinder is running");
         mainPanel.resetKeyboardActions();
-        blocksList.stream().flatMap(List::stream).forEach(this::updateBlockFinal);
+        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
 
-        Thread algorithmThread = new Thread(new AStarPathfinder(this));
+        Thread algorithmThread = new Thread(pathfinder);
         algorithmThread.setName("Algorithm Thread");
         algorithmThread.start();
 
@@ -256,7 +274,22 @@ public class Gui extends JFrame {
                 e.printStackTrace();
             }
         }
+
+        try {
+            TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
+            SwingUtilities.invokeAndWait(() -> {
+                blocks.get(0).getButton().setBackground(PRESSED_COLOR);
+                blocks.get(blocks.size() - 1).getButton().setBackground(PRESSED_COLOR);
+            });
+        } catch (InterruptedException e) {
+            System.err.println("Error: Thread was interrupted");
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+
 
     public void resetGUI() {
         Main.run(this);
@@ -268,6 +301,9 @@ public class Gui extends JFrame {
         return dim.getWidth()/dim.getHeight();
     }
 
+    public static void paintBlock(Block block, Color color) {
+        block.getButton().setBackground(color);
+    }
 
 
 }

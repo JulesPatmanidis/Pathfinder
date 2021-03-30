@@ -1,26 +1,27 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.Objects;
 
 public class Block implements Comparable<Block>{
 
-    private JButton button;
+    private mapButton button;
     private Node node;
     private transient Block parentBlock;
 
     public Block(int row, int column) {
-        button = new JButton();
         node = new Node(row, column);
+        button = new mapButton(row, column);
     }
 
 
-    public Block(Block block) {
-        button = block.getButton();
-        node = new Node(block.getNode());
+//    public Block(Block block) {
+//        button = block.getButton();
+//        node = new Node(block.getNode());
+//
+//    }
 
-    }
 
-
-    public void setButton(JButton button) {
+    public void setButton(mapButton button) {
         this.button = button;
     }
 
@@ -49,10 +50,19 @@ public class Block implements Comparable<Block>{
 
     @Override
     public int compareTo(Block o) {
-        if (this.getNode().getTotalScore() > o.getNode().getTotalScore()) {
-            return 1;
-        } else if (this.getNode().getTotalScore() == o.getNode().getTotalScore()) {
-            return 0;
-        } else return -1;
+        return this.getNode().compareTo(o.getNode());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Block)) return false;
+        Block block = (Block) o;
+        return getNode().getId().equals(block.getNode().getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getNode());
     }
 }
