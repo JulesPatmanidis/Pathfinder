@@ -130,6 +130,16 @@ public abstract class Pathfinder implements Runnable {
         return ((row >= 0 && row < getBlocks().size()) && (column >= 0 && column < getBlocks().get(0).size()));
     }
 
+    boolean[][] initializeVisited() {
+        boolean[][] array = new boolean[App.BLOCK_NUMBER][App.BLOCK_NUMBER];
+        for (int i = 0; i < App.BLOCK_NUMBER; ++i) {
+            for (int j = 0; j < App.BLOCK_NUMBER; ++j) {
+                array[i][j] = false;
+            }
+        }
+        return array;
+    }
+
     @Override
     public void run() {
         App.paintRoute(findRoute());    // findRouteTest -> Testing // findRoute -> Normal

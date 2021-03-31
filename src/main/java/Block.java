@@ -13,14 +13,6 @@ public class Block implements Comparable<Block>{
         button = new mapButton(row, column);
     }
 
-
-//    public Block(Block block) {
-//        button = block.getButton();
-//        node = new Node(block.getNode());
-//
-//    }
-
-
     public void setButton(mapButton button) {
         this.button = button;
     }
@@ -29,7 +21,6 @@ public class Block implements Comparable<Block>{
         this.node = node;
     }
 
-
     public Node getNode() {
         return node;
     }
@@ -37,7 +28,6 @@ public class Block implements Comparable<Block>{
     public JButton getButton() {
         return button;
     }
-
 
     public Block getParentBlock() {
         return parentBlock;

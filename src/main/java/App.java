@@ -10,14 +10,14 @@ import java.util.concurrent.TimeUnit;
 public class App {
     /** CONSTANTS **/
     private static final String FRAME_TITLE = "Pathfinder";
-    public static final int BLOCK_NUMBER = 50; //50
-    private static final int BUTTON_DIM = 18;    //15
+    public static final int BLOCK_NUMBER = 50; // Keep below 150
+    private static final int BUTTON_DIM = 3;    //15
 
     //private static final Dimension DIMENSION = new Dimension(BLOCK_NUMBER * BUTTON_DIM,BLOCK_NUMBER * BUTTON_DIM);
     private static final int ROUTE_PAINT_DELAY = 8;
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
-    private static final String[] ALGORITHMS = {"A-Star", "DFS", "BFS", "Dijkstra"};
+    private static final String[] ALGORITHMS = {"A-Star","Dijkstra", "BestFirstSearch", "DepthFirstSearch", "BreadthFirstSearch"};
 
     public static final Color BACKGROUND = Color.black;
     public static final Color BLOCK_COLOR = new Color(105,105,105);
@@ -57,6 +57,8 @@ public class App {
         initPathfinder();
     }
     private void createUIComponents() {
+
+
         BorderLayout topLayout = new BorderLayout();
         topLayout.setVgap(5);
         topPanel.setLayout(topLayout);
@@ -102,6 +104,7 @@ public class App {
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
 
+
         // Disable button-press with spacebar
         InputMap im = (InputMap)UIManager.get("Button.focusInputMap");
         im.put(KeyStroke.getKeyStroke("pressed SPACE"), "none");
@@ -144,11 +147,18 @@ public class App {
 
     /**
      * Initializes the JButton on the blocks array.
-     * @param block
+     * @param block block
      */
     public void initializeBlockButton(Block block) {
         block.getButton().setBackground(BLOCK_COLOR);
-        block.getButton().setPreferredSize(new Dimension(BUTTON_DIM, BUTTON_DIM));
+
+        Dimension buttonDimension = new Dimension(
+                centrePanel.getMaximumSize().width / BLOCK_NUMBER,
+                centrePanel.getMaximumSize().height / BLOCK_NUMBER
+        );
+        block.getButton().setSize(buttonDimension);
+
+        //block.getButton().setPreferredSize(buttonDimension);
         block.getButton().setBorder(BorderFactory.createLineBorder(BLOCK_BORDER_COLOR));
         String text = "" + block.getNode().getRow() + ", " + block.getNode().getColumn();
 //        block.getButton().setText(text);
@@ -175,13 +185,13 @@ public class App {
         switch (state) {
             case PRE_START:
                 clickCount = 0;
+                topPanelLabel.setText("Select starting and ending block...");
                 state = State.INITIALISE;
-                //System.out.println("State is now: PRE_START");
                 break;
             case INITIALISE:
+
                 goToMapEditState();
                 state = State.EDIT_MAP;
-                //System.out.println("State is now: EDIT_MAP");
                 break;
             case EDIT_MAP:
                 if (clickCount != 2) {
@@ -189,10 +199,8 @@ public class App {
                 }
                 goToRunState();
                 state = State.RUN;
-                //System.out.println("State is now: RUN");
                 break;
             case RUN:
-
                 System.out.println("State cannot be updated from here (RUN)");
                 break;
             default:
@@ -203,7 +211,7 @@ public class App {
 
     private void goToMapEditState() {
         topPanelLabel.setText("Draw obstacles and then click 'Run' or press 'r'  to run the selected Pathfinder.");
-        centrePanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke('r'), "EnterAction");
+        centrePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke('r'), "EnterAction");
         centrePanel.getActionMap().put("EnterAction", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -237,13 +245,20 @@ public class App {
                 // Default case do nothing
                 break;
             case "Dijkstra":
+                pathfinder = new DijkstraPathfinder(pathfinder);
+                //System.out.println("Dijkstra");
                 break;
-            case "DFS":
-                pathfinder = new DfsPathfinder(pathfinder);
-                System.out.println("DFS");
+            case "DepthFirstSearch":
+                pathfinder = new DepthFirstSearchPathfinder(pathfinder);
+                //System.out.println("DFS");
                 break;
-            case "BFS":
-                System.out.println("NOTHING ELSE MY DUDE");
+            case "BreadthFirstSearch":
+                pathfinder = new BreadthFirstSearchPathfinder(pathfinder);
+                //System.out.println("BreadthFS");
+                break;
+            case "BestFirstSearch":
+                pathfinder = new BestFirstSearchPathfinder(pathfinder);
+                //System.out.println("BestFS");
                 break;
             default:
                 break;
@@ -300,10 +315,6 @@ public class App {
         }
     }
 
-    public <T extends JComponent> void addToMainPanel(T t) {
-        centrePanel.add(t);
-    }
-
     public double getAspectRatio() {
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         //System.out.println(dim.getWidth());
@@ -349,6 +360,7 @@ public class App {
         this.centrePanel.removeAll();
         initPathfinder();
         state = State.PRE_START;
+
         updateState();
 
         centrePanel.revalidate();
@@ -362,7 +374,8 @@ public class App {
     }
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("App");
+        JFrame frame = new JFrame(FRAME_TITLE);
+        frame.setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
         frame.setContentPane(new App().panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();

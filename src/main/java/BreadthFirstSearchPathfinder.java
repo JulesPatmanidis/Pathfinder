@@ -1,42 +1,37 @@
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
-public class DfsPathfinder extends Pathfinder {
+public class BreadthFirstSearchPathfinder extends Pathfinder{
 
-    private final Stack<Block> blockStack;
+    private final LinkedList<Block> blockQueue;
     private final boolean[][] visited;
+
+    public BreadthFirstSearchPathfinder(Pathfinder previous) {
+        blockQueue = new LinkedList<>();
+        setBlocksList(previous.getBlocks());
+        setStart(previous.getStart());
+        setEnd(previous.getEnd());
+        visited = initializeVisited();
+    }
     /**
      * Method containing the main algorithm of each pathfinder
      *
      * @return A list of blocks that represents the path found
      */
-    public DfsPathfinder() {
-        blockStack = new Stack<>();
-        visited = initializeVisited();
-    }
-
-    public DfsPathfinder(Pathfinder previous) {
-        blockStack = new Stack<>();
-        visited = initializeVisited();
-        setBlocksList(previous.getBlocks());
-        setStart(previous.getStart());
-        setEnd(previous.getEnd());
-    }
-
     @Override
     public List<Block> findRoute() {
         if (getStart() == null) {
             throw new NullPointerException("Start was null");
         }
 
-        blockStack.push(getStart());
+        blockQueue.add(getStart());
         visited[getStart().getNode().getRow()][getStart().getNode().getColumn()] = true;
         Block currentBlock;
         Node currentNode;
-        while (!blockStack.isEmpty()) {
-            currentBlock = blockStack.pop();
+        while (!blockQueue.isEmpty()) {
+            currentBlock = blockQueue.poll();
             currentNode = currentBlock.getNode();
 
             for (Block neighbourBlock : getNeighbours(currentBlock)) {
@@ -63,22 +58,12 @@ public class DfsPathfinder extends Pathfinder {
 
                 visited[neighbourNode.getRow()][neighbourNode.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
-                blockStack.add(neighbourBlock);
+                blockQueue.add(neighbourBlock);
                 System.out.printf("node added: (%d, %d) from parent: (%d, %d) with name: %s\n",
-                            neighbourNode.getRow(), neighbourNode.getColumn(), currentNode.getRow(), currentNode.getColumn(), neighbourNode);
+                        neighbourNode.getRow(), neighbourNode.getColumn(), currentNode.getRow(), currentNode.getColumn(), neighbourNode);
             }
         }
         System.out.println("Ended");
         return List.of(getEnd());
-    }
-
-    private boolean[][] initializeVisited() {
-        boolean[][] array = new boolean[App.BLOCK_NUMBER][App.BLOCK_NUMBER];
-        for (int i = 0; i < App.BLOCK_NUMBER; ++i) {
-            for (int j = 0; j < App.BLOCK_NUMBER; ++j) {
-                array[i][j] = false;
-            }
-        }
-        return array;
     }
 }

@@ -1,9 +1,7 @@
 import javax.swing.*;
-import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 
@@ -15,23 +13,28 @@ public class AStarPathfinder extends Pathfinder {
     /**
      * INSTANCE VARIABLES
      **/
-    private final List<Block> closedList;
-    private final PriorityQueue<Block> openQueue;
+    private Comparator<Block> blockComparator;
+
 
     public AStarPathfinder() {
-        closedList = new ArrayList<>();
-        openQueue = new PriorityQueue<>(OPEN_QUEUE_SIZE);
+        // Blocks get compared based on totalScore
+        blockComparator = Comparator.comparingDouble(o -> o.getNode().getTotalScore());
     }
     public AStarPathfinder(Pathfinder previous) {
-        closedList = new ArrayList<>();
-        openQueue = new PriorityQueue<>(OPEN_QUEUE_SIZE);
+        blockComparator = Comparator.comparingDouble(o -> o.getNode().getTotalScore());
         setStart(previous.getStart());
         setEnd(previous.getEnd());
         setBlocksList(previous.getBlocks());
     }
 
+    public void setBlockComparator(Comparator<Block> blockComparator) {
+        this.blockComparator = blockComparator;
+    }
+
     @Override
     public List<Block> findRoute() {
+        PriorityQueue<Block> openQueue = new PriorityQueue<>(OPEN_QUEUE_SIZE, blockComparator);
+        List<Block> closedList = new ArrayList<>();
         //System.out.println(this.toString());
         getStart().getNode().setScoreFromStart(0);
         openQueue.add(getStart());
@@ -113,39 +116,6 @@ public class AStarPathfinder extends Pathfinder {
     public boolean queueContains(PriorityQueue<Block> queue, Block block) {
         Stream<Block> blockStream = queue.stream();
         return blockStream.anyMatch(x -> x.equals(block));
-
-    }
-
-
-//    @Override
-//    public List<Block> getNeighbours(Block parentBlock) {
-//        // Add delay
-//        try {
-//            TimeUnit.NANOSECONDS.sleep(DELAY);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        List<Block> neighbours = new ArrayList<>();
-//        int row = parentBlock.getNode().getRow();
-//        int column = parentBlock.getNode().getColumn();
-//
-//        List<List<Integer>> displacement_matrix = (canMoveDiagonally()) ? DISPLACEMENT_MATRIX_1 : DISPLACEMENT_MATRIX_2;
-//        for (List<Integer> vector : displacement_matrix) {
-//            int tempRow = vector.get(0);
-//            int tempColumn = vector.get(1);
-//
-//            if (isValid(row + tempRow, column + tempColumn)) {
-//                Block currentBlock = getBlocks().get(row + tempRow).get(column + tempColumn);
-//                if (currentBlock.getNode().isWalkable()) {
-//                    neighbours.add(currentBlock);
-//                }
-//            }
-//        }
-//        return neighbours;
-//    }
-
-    private void initialiseVisited() {
 
     }
 
