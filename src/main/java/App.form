@@ -36,28 +36,17 @@
           </component>
         </children>
       </grid>
-      <grid id="6729b" binding="leftPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
+      <grid id="6729b" binding="leftPanel" layout-manager="GridBagLayout">
         <constraints border-constraint="West"/>
         <properties>
           <background color="-14211289"/>
         </properties>
         <border type="none"/>
         <children>
-          <component id="5b29b" class="javax.swing.JList" binding="algorithmList">
-            <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="2" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="150" height="50"/>
-              </grid>
-            </constraints>
-            <properties>
-              <foreground color="-12828863"/>
-              <selectionForeground color="-16777216"/>
-            </properties>
-          </component>
           <component id="fb152" class="javax.swing.JButton" binding="runButton">
             <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="1.0" weighty="0.0"/>
             </constraints>
             <properties>
               <text value="Button"/>
@@ -65,17 +54,53 @@
           </component>
           <component id="b4fd9" class="javax.swing.JCheckBox" binding="allowDiagonalCheckBox">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <gridbag weightx="1.0" weighty="0.0"/>
             </constraints>
             <properties>
               <text value="CheckBox"/>
             </properties>
           </component>
-          <vspacer id="41e08">
+          <component id="8c094" class="javax.swing.JTextArea" binding="infoTextArea">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="50"/>
+              </grid>
+              <gridbag top="15" left="5" bottom="15" right="5" weightx="1.0" weighty="3.0"/>
             </constraints>
-          </vspacer>
+            <properties>
+              <editable value="false"/>
+              <wrapStyleWord value="true"/>
+            </properties>
+          </component>
+          <component id="8f644" class="javax.swing.JTextArea" binding="infoTitleTextArea">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="50"/>
+              </grid>
+              <gridbag top="15" left="5" bottom="15" right="5" weightx="1.0" weighty="0.1"/>
+            </constraints>
+            <properties>
+              <editable value="false"/>
+              <font name="Arial" size="14" style="0"/>
+              <lineWrap value="false"/>
+              <wrapStyleWord value="true"/>
+            </properties>
+          </component>
+          <component id="5b29b" class="javax.swing.JList" binding="algorithmList">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="2" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="50"/>
+              </grid>
+              <gridbag weightx="1.0" weighty="0.05"/>
+            </constraints>
+            <properties>
+              <font/>
+              <foreground color="-12828863"/>
+              <selectionForeground color="-16777216"/>
+              <selectionMode value="0"/>
+            </properties>
+          </component>
         </children>
       </grid>
       <grid id="e5fce" binding="centrePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

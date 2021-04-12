@@ -1,0 +1,5 @@
+The A* (A start) algorithm determines which node to choose next based on the current distance travelled to reach the node, and the Euclidean distance between the node and the destination.
+The Dijkstra algorithm determines which node to chose next based on the current distance travelled to reach the node.
+The BestFirstSearch algorithm determines which node to chose next based on the Euclidean distance between each node and the destination.
+The BreadthFirstSearch is quite similar to the Dijkstra algorithm, but it does not take into account any weights, a stack is used to store nodes and the classic BFS algorithm is used. (If the "Move diagonally" option is disabled, it acts identically to Dijkstra's algorithm.
+This algorithms was just made for fun as the path returned is not the shortest one, but I though it would return interesting patters. It heavily depends on the order each node's neighbours are added. (Acts weirder when "Move diagonally" is disabled),

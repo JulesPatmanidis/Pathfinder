@@ -2,10 +2,20 @@ plugins {
     id 'java'
 }
 
+
 group 'Pathfinder'
-version '1.0-SNAPSHOT'
 
 
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Pathfinder',
+                'Main-Class': 'App'
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 
 repositories {
     mavenCentral()
@@ -13,4 +23,7 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+
+// https://mvnrepository.com/artifact/com.jetbrains.intellij.java/java-gui-forms-rt
+    runtimeOnly group: 'com.jetbrains.intellij.java', name: 'java-gui-forms-rt', version: '193.5964'
 }

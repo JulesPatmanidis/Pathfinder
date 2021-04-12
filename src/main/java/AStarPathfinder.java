@@ -35,7 +35,6 @@ public class AStarPathfinder extends Pathfinder {
     public List<Block> findRoute() {
         PriorityQueue<Block> openQueue = new PriorityQueue<>(OPEN_QUEUE_SIZE, blockComparator);
         List<Block> closedList = new ArrayList<>();
-        //System.out.println(this.toString());
         getStart().getNode().setScoreFromStart(0);
         openQueue.add(getStart());
         Block currentBlock;
@@ -44,7 +43,7 @@ public class AStarPathfinder extends Pathfinder {
         while (!openQueue.isEmpty()) {
 
 
-            currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list (poll = pop)
+            currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list
 
             if (currentBlock != null) {
                 currentNode = currentBlock.getNode();
@@ -64,7 +63,6 @@ public class AStarPathfinder extends Pathfinder {
 
             /* for every neighbour,  */
             for (Block neighbourBlock : neighbours) {
-
                 Node neighbourNode = neighbourBlock.getNode();
                 /* if the neighbour is already in open list or closed list through a shorter path, skip it */
                 double newDistFromParent = neighbourNode.calcEuclidDistanceTo(currentNode);

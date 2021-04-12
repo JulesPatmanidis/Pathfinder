@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Pathfinder.main:jar">
+    <output-path>$PROJECT_DIR$/classes/artifacts/Pathfinder_main_jar</output-path>
+    <root id="archive" name="Pathfinder.main.jar">
+      <element id="module-output" name="Pathfinder.main" />
+    </root>
+  </artifact>
+</component>

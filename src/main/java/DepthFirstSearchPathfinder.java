@@ -32,7 +32,6 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
         blockStack.push(getStart());
         visited[getStart().getNode().getRow()][getStart().getNode().getColumn()] = true;
         Block currentBlock;
-        Node currentNode;
         while (!blockStack.isEmpty()) {
             currentBlock = blockStack.pop();
 
@@ -43,11 +42,9 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                     System.out.println("Path found");
                     return reconstructPath(currentBlock);
                 }
-
                 if (visited[neighbourNode.getRow()][neighbourNode.getColumn()]) {
                     continue;
                 }
-
                 try {
                     SwingUtilities.invokeAndWait(() -> App.paintBlock(neighbourBlock, App.CHECKED_COLOR));
                 } catch (InterruptedException e) {
@@ -57,7 +54,6 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                     System.err.println("Error: " + e.getMessage());
                     e.printStackTrace();
                 }
-
                 visited[neighbourNode.getRow()][neighbourNode.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 blockStack.add(neighbourBlock);
@@ -65,7 +61,6 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
 //                            neighbourNode.getRow(), neighbourNode.getColumn(), currentNode.getRow(), currentNode.getColumn(), neighbourNode);
             }
         }
-        System.out.println("Ended");
         return List.of(getEnd());
     }
 

@@ -4,9 +4,9 @@ public class Node implements Comparable<Node> {
     private double totalScore;
     private double distanceScore;
     private double scoreFromStart = Double.MAX_VALUE;
-    private int row;
-    private int column;
-    private String id;
+    private final int row;
+    private final int column;
+    private final String id;
 
     public Node(int row, int column) {
         walkable = true;

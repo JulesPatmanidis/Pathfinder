@@ -1,3 +1,7 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.PriorityQueue;
 
@@ -6,20 +10,24 @@ public class test {
 //        AStarPathfinder pathfinder = new AStarPathfinder();
 //        Gui gui = new Gui();
 //        Block block1 = pathfinder.getBlocks().get(0).get(0);
-        PriorityQueue<Integer> queue = new PriorityQueue<>();
-        Integer a = 1;
-        Integer b = 2;
-        Integer c = 3;
-        Integer d = 4;
-        queue.add(a);
-        queue.add(b);
-        queue.add(c);
-        queue.add(d);
-
-
-
-        for (int i = 0; i < 4; i++) {
-            System.out.println(queue.poll());
+        System.out.println(new File(".").getAbsolutePath());
+        String[] AlgorithmInfo = new String[5];
+        try {
+            File file = new File("src/main/java/testFile");
+            FileReader reader = new FileReader(file);
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            String currentLine;
+            int count = 0;
+            do {
+                currentLine = bufferedReader.readLine();
+                AlgorithmInfo[count] = currentLine;
+                count++;
+            } while (currentLine != null && count < 5);
+        } catch (IOException e) {
+            System.err.println("Algorithm info parsing failed");
+            e.printStackTrace();
         }
+
+        System.out.println(AlgorithmInfo[1]);
     }
 }

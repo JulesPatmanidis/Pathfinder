@@ -1,7 +1,10 @@
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class App {
     /** CONSTANTS **/
     private static final String FRAME_TITLE = "Pathfinder";
-    public static final int BLOCK_NUMBER = 50; // Keep below 150
-    private static final int BUTTON_DIM = 3;    //15
+    public static final int BLOCK_NUMBER = 60; // Keep below 150
 
     //private static final Dimension DIMENSION = new Dimension(BLOCK_NUMBER * BUTTON_DIM,BLOCK_NUMBER * BUTTON_DIM);
-    private static final int ROUTE_PAINT_DELAY = 8;
+    private static final int ROUTE_PAINT_DELAY = 8; // ms
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
-    private static final String[] ALGORITHMS = {"A-Star","Dijkstra", "BestFirstSearch", "DepthFirstSearch", "BreadthFirstSearch"};
+    private static final String[] ALGORITHMS =
+            {"A-Star","Dijkstra", "BestFirstSearch", "BreadthFirstSearch", "DepthFirstSearch",};
 
     public static final Color BACKGROUND = Color.black;
     public static final Color BLOCK_COLOR = new Color(105,105,105);
@@ -30,6 +33,7 @@ public class App {
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
     public static final Color CHECKED_COLOR = ACCENT_COLOR;
     public static final Color RESET_COLOR = ACCENT_COLOR;
+    public static final Font GLOBAL_FONT = new Font("Arial", Font.PLAIN, 15);
 
     enum State {
         PRE_START,
@@ -37,7 +41,7 @@ public class App {
         EDIT_MAP,
         RUN
     }
-
+    private static final String[] algorithmInfo = new String[ALGORITHMS.length];
     private JPanel panel1;
     private JPanel topPanel;
     private JPanel leftPanel;
@@ -47,15 +51,19 @@ public class App {
     private JList<String> algorithmList;
     private JLabel topPanelLabel;
     private JCheckBox allowDiagonalCheckBox;
+    private JTextArea infoTextArea;
+    private JTextArea infoTitleTextArea;
 
     private int clickCount = 0;
     private Pathfinder pathfinder;
     private State state;
 
     public App() {
+        Utils.parseAlgorithmInfo(algorithmInfo);
         createUIComponents();
         initPathfinder();
     }
+
     private void createUIComponents() {
 
 
@@ -69,20 +77,22 @@ public class App {
         topPanelLabel.setOpaque(true);
         topPanelLabel.setBackground(PANEL_COLOUR);
         topPanelLabel.setForeground(TEXT_COLOR);
+        topPanelLabel.setFont(GLOBAL_FONT);
         topPanel.add(topPanelLabel, BorderLayout.WEST);
 
         runButton.setText("Run");
         runButton.setBackground(RESET_COLOR);
         runButton.setForeground(TEXT_COLOR);
+        runButton.setFocusPainted(false);
         runButton.addActionListener(x -> runButtonClicked());
-
-        topPanel.add(resetButton, BorderLayout.EAST);
-        topPanel.setBackground(PANEL_COLOUR);
+        runButton.setFont(GLOBAL_FONT);
 
         resetButton.setText("Reset");
         resetButton.setBackground(RESET_COLOR);
         resetButton.setForeground(TEXT_COLOR);
+        resetButton.setFocusPainted(false);
         resetButton.addActionListener(x -> resetApp());
+        resetButton.setFont(GLOBAL_FONT);
         topPanel.add(resetButton, BorderLayout.EAST);
 
         algorithmList.setBorder(BorderFactory.createLineBorder(new Color(184, 184, 184), 2));
@@ -90,22 +100,44 @@ public class App {
         DefaultListCellRenderer renderer = (DefaultListCellRenderer) algorithmList.getCellRenderer();
         renderer.setHorizontalAlignment(SwingConstants.CENTER);
 
+        algorithmList.setMaximumSize(algorithmList.getSize());
         algorithmList.setSelectedIndex(0);
         algorithmList.setForeground(new Color(184, 184, 184));
         algorithmList.setBackground(PANEL_COLOUR);
         algorithmList.setSelectionBackground(PATH_COLOR);
+        algorithmList.setFont(GLOBAL_FONT);
+        algorithmList.addListSelectionListener(e -> {
+            JList<String> list = (JList<String>) e.getSource();
+            int selected  = list.getSelectedIndex();
+            infoTextArea.setText(algorithmInfo[selected]);
+        });
 
         allowDiagonalCheckBox.setText("Allow Diagonal movement");
         allowDiagonalCheckBox.setBackground(RESET_COLOR);
         allowDiagonalCheckBox.setForeground(TEXT_COLOR);
+        allowDiagonalCheckBox.setFont(GLOBAL_FONT);
         allowDiagonalCheckBox.setSelected(true);
 
-        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, BLOCK_NUMBER, 0 ,0));
+        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0 ,0));
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
 
+        infoTitleTextArea.setBackground(PANEL_COLOUR);
+        infoTitleTextArea.setColumns(1);
+        infoTitleTextArea.setRows(2);
+        infoTitleTextArea.setForeground(TEXT_COLOR);
+        infoTitleTextArea.setLineWrap(true);
+        infoTitleTextArea.setFont(GLOBAL_FONT);
+        infoTitleTextArea.setText("Information about the selected algorithm:");
 
-        // Disable button-press with spacebar
+        infoTextArea.setBackground(PANEL_COLOUR);
+        infoTextArea.setForeground(TEXT_COLOR);
+        infoTextArea.setLineWrap(true);
+        infoTextArea.setText(algorithmInfo[0]);
+        infoTextArea.setFont(GLOBAL_FONT);
+
+
+        // Disable button-press with space-bar
         InputMap im = (InputMap)UIManager.get("Button.focusInputMap");
         im.put(KeyStroke.getKeyStroke("pressed SPACE"), "none");
         im.put(KeyStroke.getKeyStroke("released SPACE"), "none");
@@ -113,8 +145,6 @@ public class App {
         state = State.INITIALISE;
 
     }
-
-
 
     // CHANGE LATER
     private void initPathfinder() {
@@ -129,11 +159,11 @@ public class App {
      * Adds JButtons to the mainPanel
      */
     private List<List<Block>>  createBlockGrid() {
-        int panelAspectRatio = centrePanel.getMaximumSize().width / centrePanel.getMaximumSize().height;
+        double panelAspectRatio = Utils.getAspectRatio();
         List<List<Block>> tempList = new ArrayList<>();
-        for (int i = 0; i < BLOCK_NUMBER; i++) {
+        for (int i = 0; i < BLOCK_NUMBER ; i++) {
             tempList.add(i, new ArrayList<>());
-            for (int j = 0; j < BLOCK_NUMBER * panelAspectRatio; j++) {
+            for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
                 Block current = new Block(i, j);
                 initializeBlockButton(current);
                 tempList.get(i).add(j, current);
@@ -152,31 +182,29 @@ public class App {
     public void initializeBlockButton(Block block) {
         block.getButton().setBackground(BLOCK_COLOR);
 
-        Dimension buttonDimension = new Dimension(
-                centrePanel.getMaximumSize().width / BLOCK_NUMBER,
-                centrePanel.getMaximumSize().height / BLOCK_NUMBER
-        );
-        block.getButton().setSize(buttonDimension);
+        int offset = Toolkit.getDefaultToolkit().getScreenSize().height - 180;
+        int buttonSize = (int) Math.floor(offset / (double) BLOCK_NUMBER);
+        block.getButton().setPreferredSize(new Dimension(buttonSize,buttonSize));
 
         //block.getButton().setPreferredSize(buttonDimension);
         block.getButton().setBorder(BorderFactory.createLineBorder(BLOCK_BORDER_COLOR));
         String text = "" + block.getNode().getRow() + ", " + block.getNode().getColumn();
-//        block.getButton().setText(text);
-//        block.getButton().setForeground(Color.WHITE);
+        //block.getButton().setText(text);
+        //block.getButton().setForeground(Color.WHITE);
         block.getButton().addActionListener(e -> {
             block.getButton().setBackground(PRESSED_COLOR);
 
             clickCount++;
             if (clickCount == 1) {
                 pathfinder.setStart(block);
-                System.out.println("Start is set");
-                System.out.println(pathfinder.getStart().toString());
+                //System.out.println("Start is set");
+                //System.out.println(pathfinder.getStart().toString());
             }
             if (clickCount == 2) {
                 pathfinder.setEnd(block);
                 updateState();
                 //goToClickState();
-                System.out.println("End is set");
+                //System.out.println("End is set");
             }
         });
     }
@@ -189,7 +217,6 @@ public class App {
                 state = State.INITIALISE;
                 break;
             case INITIALISE:
-
                 goToMapEditState();
                 state = State.EDIT_MAP;
                 break;
@@ -241,7 +268,7 @@ public class App {
     private void selectPathfinder() {
         switch (algorithmList.getSelectedValue()) {
             case "A-Star":
-                System.out.println("A-star");
+                //System.out.println("A-star");
                 // Default case do nothing
                 break;
             case "Dijkstra":
@@ -315,11 +342,7 @@ public class App {
         }
     }
 
-    public double getAspectRatio() {
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        //System.out.println(dim.getWidth());
-        return dim.getWidth()/dim.getHeight();
-    }
+
 
     public static void paintRoute(List<Block> blocks) {
         //System.out.println(Thread.currentThread().getName() + " paintRoute");
@@ -338,7 +361,7 @@ public class App {
         }
 
         try {
-            TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
+            //TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
             SwingUtilities.invokeAndWait(() -> {
                 blocks.get(0).getButton().setBackground(PRESSED_COLOR);
                 blocks.get(blocks.size() - 1).getButton().setBackground(PRESSED_COLOR);
@@ -375,7 +398,9 @@ public class App {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame(FRAME_TITLE);
-        frame.setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
+        frame.setResizable(false);
+        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        //frame.setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
         frame.setContentPane(new App().panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();

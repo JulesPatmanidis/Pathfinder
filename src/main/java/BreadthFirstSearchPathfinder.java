@@ -29,23 +29,17 @@ public class BreadthFirstSearchPathfinder extends Pathfinder{
         blockQueue.add(getStart());
         visited[getStart().getNode().getRow()][getStart().getNode().getColumn()] = true;
         Block currentBlock;
-        Node currentNode;
         while (!blockQueue.isEmpty()) {
             currentBlock = blockQueue.poll();
-            currentNode = currentBlock.getNode();
-
             for (Block neighbourBlock : getNeighbours(currentBlock)) {
                 Node neighbourNode = neighbourBlock.getNode();
 
                 if (currentBlock.equals(getEnd())) {
-                    System.out.println("Path found");
                     return reconstructPath(currentBlock);
                 }
-
                 if (visited[neighbourNode.getRow()][neighbourNode.getColumn()]) {
                     continue;
                 }
-
                 try {
                     SwingUtilities.invokeAndWait(() -> App.paintBlock(neighbourBlock, App.CHECKED_COLOR));
                 } catch (InterruptedException e) {
@@ -55,15 +49,11 @@ public class BreadthFirstSearchPathfinder extends Pathfinder{
                     System.err.println("Error: " + e.getMessage());
                     e.printStackTrace();
                 }
-
                 visited[neighbourNode.getRow()][neighbourNode.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 blockQueue.add(neighbourBlock);
-                System.out.printf("node added: (%d, %d) from parent: (%d, %d) with name: %s\n",
-                        neighbourNode.getRow(), neighbourNode.getColumn(), currentNode.getRow(), currentNode.getColumn(), neighbourNode);
             }
         }
-        System.out.println("Ended");
         return List.of(getEnd());
     }
 }

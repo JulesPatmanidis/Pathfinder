@@ -131,9 +131,10 @@ public abstract class Pathfinder implements Runnable {
     }
 
     boolean[][] initializeVisited() {
-        boolean[][] array = new boolean[App.BLOCK_NUMBER][App.BLOCK_NUMBER];
+        int width = (int) (App.BLOCK_NUMBER * getAspectRatio());
+        boolean[][] array = new boolean[App.BLOCK_NUMBER][width];
         for (int i = 0; i < App.BLOCK_NUMBER; ++i) {
-            for (int j = 0; j < App.BLOCK_NUMBER; ++j) {
+            for (int j = 0; j < width; ++j) {
                 array[i][j] = false;
             }
         }
