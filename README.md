@@ -1,6 +1,9 @@
 # Pathfinders.Pathfinder
 
 This porject is a Java application made for practicing pathfinding algorithms.
+
+To run the application, go to Pathfinder/build/libs, then download and run the Pathfinder.jar file.
+
 Currently implemented features:
   - Pathfinding algorithms:
     - A star
