@@ -5,6 +5,7 @@ import Utilities.Utils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;

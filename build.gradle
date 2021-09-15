@@ -10,7 +10,7 @@ group 'Pathfinder'
 task fatJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'Pathfinder',
-                'Main-Class': 'App'
+                'Main-Class': 'Application.App'
     }
     baseName = project.name
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
