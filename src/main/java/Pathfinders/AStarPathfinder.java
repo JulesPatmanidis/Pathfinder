@@ -97,7 +97,6 @@ public class AStarPathfinder extends Pathfinder {
     public boolean queueContains(PriorityQueue<Block> queue, Block block) {
         Stream<Block> blockStream = queue.stream();
         return blockStream.anyMatch(x -> x.equals(block));
-
     }
 
 }
