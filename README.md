@@ -1,4 +1,4 @@
-# Pathfinders.Pathfinder
+# Pathfinder
 
 This porject is a Java application made for practicing pathfinding algorithms.
 
