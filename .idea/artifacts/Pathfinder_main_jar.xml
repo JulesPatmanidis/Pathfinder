@@ -2,7 +2,11 @@
   <artifact type="jar" name="Pathfinder.main:jar">
     <output-path>$PROJECT_DIR$/classes/artifacts/Pathfinder_main_jar</output-path>
     <root id="archive" name="Pathfinder.main.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/META-INF/MANIFEST.MF" />
+      </element>
       <element id="module-output" name="Pathfinder.main" />
+      <element id="library" level="project" name="Gradle: com.jetbrains.intellij.java:java-gui-forms-rt:193.5964" />
     </root>
   </artifact>
 </component>
