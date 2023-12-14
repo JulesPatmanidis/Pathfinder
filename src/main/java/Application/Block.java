@@ -20,7 +20,7 @@ public class Block implements Comparable<Block>{
         button = new mapButton();
     }
 
-    public JButton getButton() {
+    public mapButton getButton() {
         return button;
     }
 

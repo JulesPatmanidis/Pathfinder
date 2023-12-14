@@ -1,13 +1,10 @@
 package Pathfinders;
 
-import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
 
 import Application.Block;
-import Application.App;
 
 
 public class AStarPathfinder extends Pathfinder {
@@ -46,7 +43,7 @@ public class AStarPathfinder extends Pathfinder {
 
         while (!openQueue.isEmpty()) {
             currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list
-
+            currentBlock.getButton().paintCurrent();
             /* if current node is the destination, generate route and return it */
             if (currentBlock.equals(getEnd())) {
                 return reconstructPath(currentBlock);
@@ -77,15 +74,7 @@ public class AStarPathfinder extends Pathfinder {
 
                 // If block has not been visited before, add it to the open queue
                 if (!queueContains(openQueue, neighbourBlock) && !closedList.contains(neighbourBlock)) {
-                    try {
-                        SwingUtilities.invokeAndWait(() -> neighbourBlock.getButton().setBackground(App.CHECKED_COLOR));
-                    } catch (InterruptedException e) {
-                        System.err.println("Error: Thread was interrupted");
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        System.err.println("Error: " + e.getMessage());
-                        e.printStackTrace();
-                    }
+                    neighbourBlock.getButton().paintNeighbour();
                     openQueue.add(neighbourBlock);
                 }
             }

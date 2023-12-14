@@ -1,10 +1,12 @@
 package Utilities;
 
+import javax.swing.*;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.awt.geom.Rectangle2D;
+import java.io.*;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 
 public class Utils {
@@ -14,12 +16,15 @@ public class Utils {
             FileReader reader = new FileReader(file);
             BufferedReader bufferedReader = new BufferedReader(reader);
             String currentLine;
+            String currentLine2;
             int count = 0;
             do {
                 currentLine = bufferedReader.readLine();
                 algorithmInfo[count] = currentLine;
                 count++;
             } while (currentLine != null && count < algorithmInfo.length);
+
+
         } catch (IOException e) {
             System.err.println("Algorithm info parsing failed");
             e.printStackTrace();
@@ -31,5 +36,7 @@ public class Utils {
         //System.out.println(dim.getWidth());
         return dim.getWidth()/dim.getHeight();
     }
+
+
 
 }

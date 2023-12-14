@@ -36,27 +36,23 @@ public class BreadthFirstSearchPathfinder extends Pathfinder {
         Block currentBlock;
         while (!blockQueue.isEmpty()) {
             currentBlock = blockQueue.poll();
+
+            if (currentBlock.equals(getEnd())) {
+                return reconstructPath(currentBlock);
+            }
+
             for (Block neighbourBlock : getNeighbours(currentBlock)) {
                 //Node neighbourNode = neighbourBlock.getNode();
 
-                if (currentBlock.equals(getEnd())) {
-                    return reconstructPath(currentBlock);
-                }
                 if (visited[neighbourBlock.getRow()][neighbourBlock.getColumn()]) {
                     continue;
                 }
-                try {
-                    SwingUtilities.invokeAndWait(() -> neighbourBlock.getButton().setBackground(App.CHECKED_COLOR));
-                } catch (InterruptedException e) {
-                    System.err.println("Error: Thread was interrupted");
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    System.err.println("Error: " + e.getMessage());
-                    e.printStackTrace();
-                }
+
+                neighbourBlock.getButton().paintNeighbour();
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 blockQueue.add(neighbourBlock);
+
             }
         }
         return List.of(getEnd());

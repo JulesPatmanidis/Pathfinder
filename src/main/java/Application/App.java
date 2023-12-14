@@ -5,7 +5,6 @@ import Utilities.Utils;
 
 import javax.swing.*;
 import javax.swing.border.Border;
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
@@ -17,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 public class App {
     /** CONSTANTS **/
     private static final String FRAME_TITLE = "Pathfinder";
-    public static final int BLOCK_NUMBER = 60; // Keep below 150
-    private static final int ROUTE_PAINT_DELAY = 8; // ms
+    public static final int BLOCK_NUMBER = 80; //60 // Keep below 150
+    public static final int ROUTE_PAINT_DELAY = 8; // ms
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
 
@@ -65,6 +64,10 @@ public class App {
     private JList<String> algorithmList;
     private JLabel instructionsLabel;
     private JCheckBox allowDiagonalCheckBox;
+    private JCheckBox fadeCheckBox;
+    private JSlider delaySlider;
+    private JLabel sliderLabel;
+    private JLabel sliderValueLabel;
     private JTextArea infoTextArea;
     private JTextArea infoTitleTextArea;
     private JList<String> mazeList;
@@ -74,12 +77,26 @@ public class App {
     private int clickCount = 0;
     private Pathfinder pathfinder;
     private State state;
+    public static boolean isFadeChecked = true;
+    public static int paintDelay = 50;
+    public static boolean allowDiagonal = true;
 
     public App() {
+        System.out.println("App: " + Thread.currentThread());
         Utils.parseAlgorithmInfo(algorithmInfo);
+        long startTime = System.nanoTime();
         createUIComponents();
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+        System.out.println("createUIComponents(): " + Math.floor(duration / 1000000f));
+
+        startTime = System.nanoTime();
         initPathfinder();
+        endTime = System.nanoTime();
+        duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+        System.out.println("initPathfinder(): " + Math.floor(duration / 1000000f));
     }
+
 
     private void createUIComponents() {
         // GLOBAL PANEL --------------------------------------------------
@@ -117,6 +134,41 @@ public class App {
         bottomPanel.add(instructionsLabel);
 
         bottomPanel.add(Box.createHorizontalGlue());
+        //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+
+        sliderLabel = new JLabel("Delay (ms):");
+        sliderLabel.setFont(GLOBAL_FONT);
+        sliderLabel.setBackground(PANEL_COLOUR);
+        sliderLabel.setForeground(TEXT_COLOR);
+        bottomPanel.add(sliderLabel);
+        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+
+        sliderValueLabel = new JLabel();
+        sliderValueLabel.setFont(GLOBAL_FONT);
+        sliderValueLabel.setBackground(PANEL_COLOUR);
+        sliderValueLabel.setForeground(TEXT_COLOR);
+        sliderValueLabel.setPreferredSize(new Dimension(70,40));
+        sliderValueLabel.setMinimumSize(new Dimension(70,40));
+
+        bottomPanel.add(sliderValueLabel);
+
+        //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+
+        delaySlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+        delaySlider.setSnapToTicks(false);
+        delaySlider.setFont(GLOBAL_FONT);
+        delaySlider.setBackground(BLOCK_BORDER_COLOR);
+        delaySlider.setForeground(TEXT_COLOR);
+        delaySlider.setMaximumSize(new Dimension(150,35));
+        delaySlider.setToolTipText("Delay");
+
+        delaySlider.addChangeListener(changeEvent -> {
+            paintDelay = delaySlider.getValue();
+            sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
+        });
+        sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
+        bottomPanel.add(delaySlider);
+        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
         allowDiagonalCheckBox = new JCheckBox();
         allowDiagonalCheckBox.setAlignmentX(0f);
@@ -128,7 +180,23 @@ public class App {
         allowDiagonalCheckBox.setSelected(true);
         allowDiagonalCheckBox.setBorder(new JButton().getBorder());
         allowDiagonalCheckBox.setBorderPainted(true);
+        allowDiagonalCheckBox.addActionListener(x -> allowDiagonal = allowDiagonalCheckBox.isSelected());
         bottomPanel.add(allowDiagonalCheckBox);
+
+        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+
+        fadeCheckBox = new JCheckBox();
+        fadeCheckBox.setAlignmentX(0f);
+        fadeCheckBox.setText("Fade");
+        fadeCheckBox.setBackground(ACCENT_COLOR);
+        fadeCheckBox.setForeground(TEXT_COLOR);
+        fadeCheckBox.setFont(GLOBAL_FONT);
+        fadeCheckBox.setFocusPainted(false);
+        fadeCheckBox.setSelected(true);
+        fadeCheckBox.setBorder(new JButton().getBorder());
+        fadeCheckBox.setBorderPainted(true);
+        fadeCheckBox.addActionListener(x -> isFadeChecked = fadeCheckBox.isSelected());
+        bottomPanel.add(fadeCheckBox);
 
         bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
@@ -154,9 +222,11 @@ public class App {
         runButton.setFont(GLOBAL_FONT);
         bottomPanel.add(runButton);
 
+
         // CENTRE PANEL -----------------------------------------------------
         centrePanel = new JPanel();
         centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0 ,0));
+        System.out.println(BLOCK_NUMBER * Utils.getAspectRatio());
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
         globalPanel.add(centrePanel, BorderLayout.CENTER);
@@ -260,9 +330,6 @@ public class App {
         mazeInfoTextArea.setFont(GLOBAL_FONT);
         //leftPanel.add(mazeInfoTextArea);
 
-
-
-
         // GENERAL ------------------------------------------------------------------
 
         // Disable button-press with space-bar
@@ -282,10 +349,13 @@ public class App {
         this.pathfinder = new AStarPathfinder();
         pathfinder.setBlocksList(createBlockGrid());
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
+        pathfinder.setVariableDelay(delaySlider.getValue());
+
         globalPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke('m'), "mAction");
         globalPanel.getActionMap().put("mAction", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                System.out.println("actionPerformed: " + Thread.currentThread());
                 selectMaze();
             }
         });
@@ -322,25 +392,19 @@ public class App {
         int buttonSize = (int) Math.floor(offset / (double) BLOCK_NUMBER);
         block.getButton().setPreferredSize(new Dimension(buttonSize,buttonSize));
 
-        //block.getButton().setPreferredSize(buttonDimension);
         block.getButton().setBorder(BorderFactory.createMatteBorder(1,0,0,1, BLOCK_BORDER_COLOR));
         String text = "" + block.getRow() + ", " + block.getColumn();
         //block.getButton().setText(text);
-        //block.getButton().setForeground(Color.WHITE);
         block.getButton().addActionListener(e -> {
             block.getButton().setBackground(PRESSED_COLOR);
 
             clickCount++;
             if (clickCount == 1) {
                 pathfinder.setStart(block);
-                //System.out.println("Start is set");
-                //System.out.println(pathfinder.getStart().toString());
             }
             if (clickCount == 2) {
                 pathfinder.setEnd(block);
                 updateState();
-                //goToClickState();
-                //System.out.println("End is set");
             }
         });
     }
@@ -385,14 +449,10 @@ public class App {
                 updateState();
             }
         });
-
-
-        // Buttons become paint-able by click-dragging over them
         pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockClick);
     }
 
     private void goToRunState() {
-
         instructionsLabel.setText("Pathfinder is running");
         centrePanel.resetKeyboardActions();
         pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
@@ -499,16 +559,7 @@ public class App {
     public static void paintRoute(List<Block> blocks) {
         //System.out.println(Thread.currentThread().getName() + " paintRoute");
         for (Block block : blocks) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
-                SwingUtilities.invokeAndWait(() -> block.getButton().setBackground(PATH_COLOR));
-            } catch (InterruptedException e) {
-                System.err.println("Error: Thread was interrupted");
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                System.err.println("Error: " + e.getMessage());
-                e.printStackTrace();
-            }
+            block.getButton().paintPath();
         }
 
         try {
@@ -544,12 +595,19 @@ public class App {
     }
 
     public static void main(String[] args) {
+
         JFrame frame = new JFrame(FRAME_TITLE);
         frame.setResizable(false);
         frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         frame.setContentPane(new App().globalPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        long start = System.nanoTime();
         frame.pack();
+        long end = System.nanoTime();
         frame.setVisible(true);
+        long end2 = System.nanoTime();
+        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
+        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
+        System.out.println(Thread.currentThread());
     }
 }

@@ -40,31 +40,27 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
         while (!blockStack.isEmpty()) {
             currentBlock = blockStack.pop();
 
-            for (Block neighbourBlock : getNeighbours(currentBlock)) {
+            if (currentBlock.equals(getEnd())) {
+                return reconstructPath(currentBlock);
+            }
 
-                if (currentBlock.equals(getEnd())) {
-                    System.out.println("Path found");
-                    return reconstructPath(currentBlock);
-                }
+            for (Block neighbourBlock : getNeighbours(currentBlock)) {
+                double newDistFromParent = neighbourBlock.calcEuclidDistanceTo(currentBlock);
                 if (visited[neighbourBlock.getRow()][neighbourBlock.getColumn()]) {
+                    if (!(neighbourBlock.getScoreFromStart() < currentBlock.getScoreFromStart() + newDistFromParent)) {
+                        neighbourBlock.setParentBlock(currentBlock);
+                    }
                     continue;
                 }
-                try {
-                    SwingUtilities.invokeAndWait(() -> neighbourBlock.getButton().setBackground(App.CHECKED_COLOR));
-                } catch (InterruptedException e) {
-                    System.err.println("Error: Thread was interrupted");
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    System.err.println("Error: " + e.getMessage());
-                    e.printStackTrace();
-                }
+
+                neighbourBlock.getButton().paintNeighbour();
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
+                neighbourBlock.calcScoreFromStart(currentBlock);
+
                 blockStack.add(neighbourBlock);
             }
         }
         return List.of(getEnd());
     }
-
-
 }

@@ -44,9 +44,18 @@ public abstract class Pathfinder implements Runnable {
             List.of(0, 2)
     );
 
+    public int getVariableDelay() {
+        return variableDelay;
+    }
+
+    public void setVariableDelay(int variableDelay) {
+        this.variableDelay = variableDelay;
+    }
+    private int variableDelay;
     /**
      * INSTANCE VARIABLES
      **/
+
     private Block start;
     private Block end;
     private List<List<Block>> blocksList;
@@ -61,12 +70,7 @@ public abstract class Pathfinder implements Runnable {
     public abstract List<Block> findRoute();
 
     public List<Block> getNeighbours(Block parentBlock) {
-        // Add delay
-        try {
-            TimeUnit.NANOSECONDS.sleep(DELAY);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
 
         List<Block> neighbours = new ArrayList<>();
         int row = parentBlock.getRow();
@@ -143,9 +147,17 @@ public abstract class Pathfinder implements Runnable {
     }
 
     private void allBlocksAreWalls () {
-        blocksList.stream()
-                .flatMap(Collection::stream)
-                .forEach(Block::makeWall);
+//        blocksList.stream()
+//                .flatMap(Collection::stream)
+//                .forEach(Block::makeWall);
+//
+        for (List<Block> row : blocksList) {
+            for (Block block : row) {
+                block.makeWall();
+
+            }
+        }
+        System.out.println(Thread.currentThread());
     }
 
     // MAZE Generation ---------------------------------------------------------------------------------------------
