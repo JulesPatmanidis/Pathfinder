@@ -2,6 +2,8 @@
 
 This porject is a Java application made for practicing pathfinding algorithms.
 
+To run, execute the jar file located in this path: Pathfinder\classes\artifacts\Pathfinder_main_jar
+
 Currently implemented features:
   - Pathfinding algorithms:
     - A star
