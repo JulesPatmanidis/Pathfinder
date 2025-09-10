@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.jetbrains.intellij.java:java-gui-forms-rt:252.23892.525" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.jetbrains.intellij.java" artifactId="java-gui-forms-rt" version="252.23892.525" baseVersion="252.23892.525" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.jetbrains.intellij.java/java-gui-forms-rt/252.23892.525/def6a20a6443862bdb9ebee395bce199947e80c6/java-gui-forms-rt-252.23892.525.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
