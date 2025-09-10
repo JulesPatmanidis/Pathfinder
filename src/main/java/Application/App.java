@@ -7,17 +7,15 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class App {
     /** CONSTANTS **/
     private static final String FRAME_TITLE = "Pathfinder";
     public static final int BLOCK_NUMBER = 80; //60 // Keep below 150
-    public static final int ROUTE_PAINT_DELAY = 8; // ms
+    public static final int ROUTE_PAINT_DELAY = 1; // ms
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
 
@@ -27,8 +25,8 @@ public class App {
     public static final String BREADTH_FIRST_SEARCH = "BreadthFirstSearch";
     public static final String DEPTH_FIRST_SEARCH = "DepthFirstSearch";
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
-    public static final String RANDOMISED_PRIMS = "Randomised DFS";
-    public static final String RANDOMIZED_DFS = "Randomised Prim's";
+    public static final String RANDOMISED_PRIMS = "Randomised Prim's";
+    public static final String RANDOMIZED_DFS = "Randomised DFS";
 
     private static final String[] ALGORITHMS =
             {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
@@ -45,7 +43,6 @@ public class App {
     public static final Color ACCENT_COLOR = new Color(2, 76, 71);
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
     public static final Color CHECKED_COLOR = ACCENT_COLOR;
-    //public static final Color RESET_COLOR = ACCENT_COLOR;
     public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
 
     enum State {
@@ -58,7 +55,7 @@ public class App {
     private JPanel globalPanel;
     private JPanel bottomPanel;
     private JPanel leftPanel;
-    private JPanel centrePanel;
+    private GridPanel centrePanel;
     private JButton resetButton;
     private JButton runButton;
     private JList<String> algorithmList;
@@ -80,6 +77,7 @@ public class App {
     public static boolean isFadeChecked = true;
     public static int paintDelay = 50;
     public static boolean allowDiagonal = true;
+    private boolean isDrawingWall = false;
 
     public App() {
         System.out.println("App: " + Thread.currentThread());
@@ -104,7 +102,6 @@ public class App {
         globalPanel.setLayout(new BorderLayout(0,0));
 
         // TOP PANEL
-
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
         topPanel.setBackground(PANEL_COLOUR);
@@ -116,6 +113,7 @@ public class App {
         topPanel.add(topLabel, BorderLayout.CENTER);
 
         globalPanel.add(topPanel, BorderLayout.NORTH);
+
         // BOTTOM PANEL -----------------------------------------------------
 
         bottomPanel = new JPanel();
@@ -134,7 +132,6 @@ public class App {
         bottomPanel.add(instructionsLabel);
 
         bottomPanel.add(Box.createHorizontalGlue());
-        //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
         sliderLabel = new JLabel("Delay (ms):");
         sliderLabel.setFont(GLOBAL_FONT);
@@ -224,7 +221,7 @@ public class App {
 
 
         // CENTRE PANEL -----------------------------------------------------
-        centrePanel = new JPanel();
+        centrePanel = new GridPanel();//JPanel();
         centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0 ,0));
         System.out.println(BLOCK_NUMBER * Utils.getAspectRatio());
         centrePanel.setBorder(MAIN_BORDER);
@@ -344,10 +341,16 @@ public class App {
         INITIALISATION-------------------------------------------------------------------------------------------------
      */
 
-    // CHANGE LATER
+    /**
+     * Initializes the pathfinder and sets up the block grid and mouse listeners.
+     */
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
-        pathfinder.setBlocksList(createBlockGrid());
+        List<List<Block>> blockGrid = createBlockGrid();
+
+        centrePanel.setBlockList(blockGrid);
+        pathfinder.setBlocksList(blockGrid);
+
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
         pathfinder.setVariableDelay(delaySlider.getValue());
 
@@ -362,52 +365,49 @@ public class App {
     }
 
     /**
-     * Adds JButtons to the mainPanel
+     * Creates a 2D grid of Block objects and adds mouse listeners to the centrePanel to handle block selection.
      */
     private List<List<Block>>  createBlockGrid() {
+
         double panelAspectRatio = Utils.getAspectRatio();
         List<List<Block>> tempList = new ArrayList<>();
         for (int i = 0; i < BLOCK_NUMBER ; i++) {
             tempList.add(i, new ArrayList<>());
             for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
                 Block current = new Block(i, j);
-                initializeBlockButton(current);
                 tempList.get(i).add(j, current);
-                centrePanel.add(current.getButton());
-                //System.out.printf("Added %d, %d\n", i, j);
             }
         }
-        return tempList;
-        //pathfinder.setBlocksList(tempList);
-    }
 
-    /**
-     * Initializes the JButton on the blocks array.
-     * @param block block
-     */
-    public void initializeBlockButton(Block block) {
-        block.getButton().setBackground(BLOCK_COLOR);
+        centrePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("centrePanel clicked at: " + e.getPoint());
+                // Add your logic here
+                int col = e.getX() / 18;
+                int row = e.getY() / 18;
 
-        int offset = Toolkit.getDefaultToolkit().getScreenSize().height - 200;
-        int buttonSize = (int) Math.floor(offset / (double) BLOCK_NUMBER);
-        block.getButton().setPreferredSize(new Dimension(buttonSize,buttonSize));
+                System.out.println("Clicked block at row: " + row + ", column: " + col);
 
-        block.getButton().setBorder(BorderFactory.createMatteBorder(1,0,0,1, BLOCK_BORDER_COLOR));
-        String text = "" + block.getRow() + ", " + block.getColumn();
-        //block.getButton().setText(text);
-        block.getButton().addActionListener(e -> {
-            block.getButton().setBackground(PRESSED_COLOR);
 
-            clickCount++;
-            if (clickCount == 1) {
-                pathfinder.setStart(block);
-            }
-            if (clickCount == 2) {
-                pathfinder.setEnd(block);
-                updateState();
+                Block clickedBlock = pathfinder.getBlocks().get(row).get(col);
+                clickCount++;
+                if (clickCount == 1) {
+                    pathfinder.setStart(clickedBlock);
+                    clickedBlock.makeStartEnd();
+                }
+                if (clickCount == 2) {
+                    pathfinder.setEnd(clickedBlock);
+                    clickedBlock.makeStartEnd();
+                    updateState();
+                }
+                //centrePanel.repaint();
             }
         });
+
+        return tempList;
     }
+
 
     /*
         STATE --------------------------------------------------------------------------------------------------------
@@ -421,6 +421,7 @@ public class App {
                 state = State.INITIALISE;
                 break;
             case INITIALISE:
+
                 goToMapEditState();
                 state = State.EDIT_MAP;
                 break;
@@ -440,6 +441,7 @@ public class App {
         }
     }
 
+
     private void goToMapEditState() {
         instructionsLabel.setText("Draw obstacles and then click 'Run' or press 'r'  to run the selected Pathfinder.");
         centrePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke('r'), "EnterAction");
@@ -449,13 +451,50 @@ public class App {
                 updateState();
             }
         });
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockClick);
+
+        centrePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                isDrawingWall = true;
+                setBlockAsWall(e);
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                isDrawingWall = false;
+            }
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                setBlockAsWall(e);
+            }
+        });
+
+        centrePanel.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (isDrawingWall) {
+                    setBlockAsWall(e);
+                }
+            }
+        });
+    }
+
+
+    private void setBlockAsWall(MouseEvent e) {
+        int col = e.getX() / 18;
+        int row = e.getY() / 18;
+        List<List<Block>> blocks = pathfinder.getBlocks();
+        if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
+            Block block = blocks.get(row).get(col);
+            block.setWalkable(false);
+            block.makeWall();
+        }
     }
 
     private void goToRunState() {
         instructionsLabel.setText("Pathfinder is running");
         centrePanel.resetKeyboardActions();
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
+        Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
+        //pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
         selectPathfinder();
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
@@ -463,47 +502,6 @@ public class App {
         algorithmThread.setName("Algorithm Thread");
         algorithmThread.start();
 
-    }
-
-    private void updateBlockFinal(Block block) {
-        clearListeners(block.getButton());
-    }
-
-    private void goToHoverState() {
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockHover);
-    }
-
-    private void updateBlockClick(Block block) {
-        clearListeners(block.getButton());
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {        //Application.Block set to be obstacle
-                if (e.getSource() instanceof JButton) {
-                    block.getButton().setBackground(OBSTACLE_COLOR);
-                    block.setWalkable(false);
-                    goToHoverState();
-                }
-            }
-        });
-    }
-
-    private void updateBlockHover(Block block) {
-        clearListeners(block.getButton());
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (e.getSource() instanceof JButton) {
-                    block.getButton().setBackground(OBSTACLE_COLOR);
-                    block.setWalkable(false);
-                }
-            }
-        });
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                goToMapEditState();
-            }
-        });
     }
 
     /*
@@ -551,42 +549,39 @@ public class App {
         }
     }
 
-    private void clearListeners(JButton block) {
-        Arrays.stream(block.getActionListeners()).forEach(block::removeActionListener);
-        Arrays.stream(block.getMouseListeners()).forEach(block::removeMouseListener);
-    }
-
+    /**
+     * Paints the route on the blocks provided with a delay between each block.
+     *
+     * @param blocks List of blocks representing the route to be painted.
+     */
     public static void paintRoute(List<Block> blocks) {
-        //System.out.println(Thread.currentThread().getName() + " paintRoute");
         for (Block block : blocks) {
-            block.getButton().paintPath();
-        }
+            block.makePath();
 
-        try {
-            //TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
-            SwingUtilities.invokeAndWait(() -> {
-                blocks.get(0).getButton().setBackground(PRESSED_COLOR);
-                blocks.get(blocks.size() - 1).getButton().setBackground(PRESSED_COLOR);
-            });
-        } catch (InterruptedException e) {
-            System.err.println("Error: Thread was interrupted");
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            try {
+                Thread.sleep(App.paintDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
         }
     }
 
+    /**
+     * Resets the application to its initial state, clearing the grid and reinitializing the pathfinder.
+     */
     public void resetApp() {
         this.centrePanel.removeAll();
         initPathfinder();
         state = State.PRE_START;
+        clickCount = 0;
 
         updateState();
 
         centrePanel.revalidate();
-        centrePanel.repaint();
+        //centrePanel.repaint();
     }
+
 
     private void runButtonClicked() {
         if (state == State.EDIT_MAP) {
@@ -597,7 +592,7 @@ public class App {
     public static void main(String[] args) {
 
         JFrame frame = new JFrame(FRAME_TITLE);
-        frame.setResizable(false);
+        frame.setResizable(true);
         frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         frame.setContentPane(new App().globalPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

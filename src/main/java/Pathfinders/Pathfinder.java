@@ -2,6 +2,7 @@ package Pathfinders;
 
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -17,7 +18,6 @@ public abstract class Pathfinder implements Runnable {
     /**
      * CONSTANTS
      **/
-    public static final int DELAY = 1;
 
     public static final List<List<Integer>> DISPLACEMENT_MATRIX_1 = List.of(
             List.of(-1, 0),
@@ -147,16 +147,12 @@ public abstract class Pathfinder implements Runnable {
     }
 
     private void allBlocksAreWalls () {
-//        blocksList.stream()
-//                .flatMap(Collection::stream)
-//                .forEach(Block::makeWall);
-//
         for (List<Block> row : blocksList) {
             for (Block block : row) {
                 block.makeWall();
-
             }
         }
+        System.out.println("All blocks are walls");
         System.out.println(Thread.currentThread());
     }
 
@@ -180,7 +176,6 @@ public abstract class Pathfinder implements Runnable {
         }
         return neighbours;
     }
-
     public void createDFSMaze() {
         allBlocksAreWalls();
 
@@ -189,33 +184,46 @@ public abstract class Pathfinder implements Runnable {
         boolean[][] visited = initializeVisited();
 
         Stack<Block> stack = new Stack<>();
-        int randomX = (int) (Math.random() * sizeY);
-        int randomY = (int) (Math.random() * sizeX);
-        stack.push(blocksList.get(randomX).get(randomY));
-        while (!stack.isEmpty()) {
-            Block current = stack.pop();
+        int randomRow = ThreadLocalRandom.current().nextInt(sizeY);
+        int randomCol = ThreadLocalRandom.current().nextInt(sizeX);
+        Block startBlock = blocksList.get(randomRow).get(randomCol);
 
-            HashMap<Block, Block> neighboursAndPaths = (HashMap<Block, Block>) getMazeNeighbours(current).entrySet().stream()
-                    .filter(map -> !visited[map.getKey().getRow()][map.getKey().getColumn()])
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        startBlock.makeWalkable();
+        visited[randomRow][randomCol] = true;
+        stack.push(startBlock);
+
+        while (!stack.isEmpty()) {
+
+            Block current = stack.peek();
+
+            Map<Block, Block> neighboursAndPaths =
+                    getMazeNeighbours(current).entrySet().stream()
+                            .filter(e -> !visited[e.getKey().getRow()][e.getKey().getColumn()])
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue,
+                                    (a, b) -> a,
+                                    HashMap::new
+                            ));
 
             if (!neighboursAndPaths.isEmpty()) {
-                int randomIndex = new Random().nextInt(neighboursAndPaths.size());
                 List<Block> neighbours = new ArrayList<>(neighboursAndPaths.keySet());
-                Block randNeighbour = neighbours.get(randomIndex);
-                neighboursAndPaths.forEach((neighbour, path) -> {
-                    neighbour.makePath();
-                    visited[neighbour.getRow()][neighbour.getColumn()] = true;
+                Block randNeighbour = neighbours.get(ThreadLocalRandom.current().nextInt(neighbours.size()));
+                Block path = neighboursAndPaths.get(randNeighbour);
 
-                    path.makePath();
-                    visited[path.getRow()][path.getColumn()] = true;
-                    if (!neighbour.equals(randNeighbour)) stack.push(neighbour);
-                });
+                randNeighbour.makeWalkable();
+                visited[randNeighbour.getRow()][randNeighbour.getColumn()] = true;
+
+                path.makeWalkable();
+                visited[path.getRow()][path.getColumn()] = true;
+
                 stack.push(randNeighbour);
+            } else {
+                stack.pop();
             }
         }
-
     }
+
 
     public void createPrimsMaze() {
         Random random = new Random();
@@ -224,7 +232,7 @@ public abstract class Pathfinder implements Runnable {
         int randCol = new Random().nextInt(blocksList.get(0).size());
         Block first = blocksList.get(randRow).get(randCol);
 
-        first.makePath();
+        first.makeWalked();
         HashMap<Block, Block> frontierMap = (HashMap<Block, Block>) getMazeNeighbours(first).entrySet().stream()
                 .filter(map -> !map.getKey().isWalkable())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -243,8 +251,8 @@ public abstract class Pathfinder implements Runnable {
             if (!neighbours.isEmpty()) {
                 int randIndex2 = random.nextInt(neighbours.size());
                 Block randNeighbour = (Block) neighbours.keySet().toArray()[randIndex2];
-                neighbours.get(randNeighbour).makePath();
-                randBlock.makePath();
+                neighbours.get(randNeighbour).makeWalkable();
+                randBlock.makeWalkable();
                 HashMap<Block, Block> newFrontierBlocks = (HashMap<Block, Block>) getMazeNeighbours(randBlock).entrySet().stream()
                         .filter(map -> !map.getKey().isWalkable())
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

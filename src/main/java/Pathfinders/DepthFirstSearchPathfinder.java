@@ -53,7 +53,8 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                     continue;
                 }
 
-                neighbourBlock.getButton().paintNeighbour();
+                //neighbourBlock.getButton().paintNeighbour();
+                neighbourBlock.makeNeighbour();
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 neighbourBlock.calcScoreFromStart(currentBlock);

@@ -48,7 +48,8 @@ public class BreadthFirstSearchPathfinder extends Pathfinder {
                     continue;
                 }
 
-                neighbourBlock.getButton().paintNeighbour();
+                //neighbourBlock.getButton().paintNeighbour();
+                neighbourBlock.makeNeighbour();
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 blockQueue.add(neighbourBlock);

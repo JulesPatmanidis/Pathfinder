@@ -1,10 +1,20 @@
 package Application;
 
-import javax.swing.*;
+import java.awt.*;
 
-public class Block implements Comparable<Block>{
+enum BlockState {
+    WALKABLE,
+    NON_WALKABLE,
+    WALKED,
+    NEIGHBOUR,
+    START_END,
+    PATH
+}
 
-    private final mapButton button;
+public class Block implements Comparable<Block> {
+
+    //private final mapButton button;
+    private final Rectangle rect;
     private final int row;
     private final int column;
     private transient Block parentBlock;
@@ -13,16 +23,22 @@ public class Block implements Comparable<Block>{
     private double distanceScore;
     private double scoreFromStart = Double.MAX_VALUE;
 
+
+
+    private BlockState state;
+
     public Block(int row, int column) {
         walkable = true;
         this.row = row;
         this.column = column;
-        button = new mapButton();
+        rect = new Rectangle(column * 18, row * 18, 18, 18);
+        //button = new mapButton();
+        state = BlockState.WALKABLE;
     }
 
-    public mapButton getButton() {
-        return button;
-    }
+//    public mapButton getButton() {
+//        return button;
+//    }
 
     public Block getParentBlock() {
         return parentBlock;
@@ -64,6 +80,10 @@ public class Block implements Comparable<Block>{
         this.scoreFromStart = scoreFromStart;
     }
 
+    public BlockState getState() {
+        return state;
+    }
+
     public void calcScoreFromStart(Block parent) {
         if (parent == null) {
             scoreFromStart = 0;
@@ -88,15 +108,35 @@ public class Block implements Comparable<Block>{
     }
 
     public void makeWall() {
-        this.getButton().setBackground(App.OBSTACLE_COLOR);
-        this.getButton().setEnabled(false);
+//        this.getButton().setBackground(App.OBSTACLE_COLOR);
+//        this.getButton().setEnabled(false);
+        this.state = BlockState.NON_WALKABLE;
         this.setWalkable(false);
     }
 
-    public void makePath() {
-        this.getButton().setBackground(App.BLOCK_COLOR);
-        this.getButton().setEnabled(true);
+    public void makeWalkable() {
+//        this.getButton().setBackground(App.BLOCK_COLOR);
+//        this.getButton().setEnabled(true);
+        this.state = BlockState.WALKABLE;
         this.setWalkable(true);
+    }
+
+    public void makeWalked() {
+        this.state = BlockState.WALKED;
+        this.setWalkable(true);
+    }
+
+    public void makeNeighbour() {
+        this.state = BlockState.NEIGHBOUR;
+    }
+
+    public void makeStartEnd() {
+        this.state = BlockState.START_END;
+        this.setWalkable(true);
+    }
+
+    public void makePath() {
+        this.state = BlockState.PATH;
     }
 
     @Override
