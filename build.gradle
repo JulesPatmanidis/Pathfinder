@@ -2,28 +2,43 @@ plugins {
     id 'java'
 }
 
-
-group 'Pathfinder'
-
-
-//create a single Jar with all dependencies
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Pathfinder',
-                'Main-Class': 'Application.App'
-    }
-    baseName = project.name
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
+group = 'Pathfinder'
+version = '1.0.0'
 
 repositories {
+    maven {
+        url "https://www.jetbrains.com/intellij-repository/releases/"
+    }
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'junit:junit:4.12'
+    runtimeOnly "com.jetbrains.intellij.java:java-gui-forms-rt:252.23892.525"
+}
 
-// https://mvnrepository.com/artifact/com.jetbrains.intellij.java/java-gui-forms-rt
-    runtimeOnly group: 'com.jetbrains.intellij.java', name: 'java-gui-forms-rt', version: '193.5964'
+// Import Jar class explicitly
+import org.gradle.api.tasks.bundling.Jar
+
+tasks.register('fatJar', Jar) {  // parentheses are required
+    group = 'build'
+    description = 'Assembles a fat JAR including all dependencies.'
+
+    archiveBaseName.set(project.name)
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Implementation-Title': 'Pathfinder',
+                'Main-Class': 'Application.App'
+        )
+    }
+
+    // Include compiled classes
+    from(project.sourceSets.main.output)
+
+    // Include runtime dependencies
+    from({
+        configurations.runtimeClasspath.resolve().collect { it.isDirectory() ? it : zipTree(it) }
+    })
 }

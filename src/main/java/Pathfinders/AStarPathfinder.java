@@ -3,8 +3,6 @@ package Pathfinders;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
-
-import Application.App;
 import Application.Block;
 
 
@@ -43,15 +41,8 @@ public class AStarPathfinder extends Pathfinder {
         Block currentBlock;
 
         while (!openQueue.isEmpty()) {
-
-            try {
-                Thread.sleep(App.paintDelay);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
             currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list
-            //currentBlock.getButton().paintCurrent();
+            assert currentBlock != null;
             currentBlock.makeWalked();
             /* if current node is the destination, generate route and return it */
             if (currentBlock.equals(getEnd())) {
@@ -83,7 +74,7 @@ public class AStarPathfinder extends Pathfinder {
 
                 // If block has not been visited before, add it to the open queue
                 if (!queueContains(openQueue, neighbourBlock) && !closedList.contains(neighbourBlock)) {
-                    //neighbourBlock.getButton().paintNeighbour();
+                    neighbourBlock.makeNeighbour();
                     openQueue.add(neighbourBlock);
                 }
             }

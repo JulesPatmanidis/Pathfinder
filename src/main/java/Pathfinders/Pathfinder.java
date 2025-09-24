@@ -1,13 +1,12 @@
 package Pathfinders;
 
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import Application.*;
+import Application.App;
+import Application.Block;
 import Utilities.Utils;
+
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * Pathfinders.Pathfinder abstract class
@@ -44,14 +43,7 @@ public abstract class Pathfinder implements Runnable {
             List.of(0, 2)
     );
 
-    public int getVariableDelay() {
-        return variableDelay;
-    }
 
-    public void setVariableDelay(int variableDelay) {
-        this.variableDelay = variableDelay;
-    }
-    private int variableDelay;
     /**
      * INSTANCE VARIABLES
      **/
@@ -95,7 +87,9 @@ public abstract class Pathfinder implements Runnable {
         this.blocksList = blocksList;
     }
 
-    public List<List<Block>> getBlocks() {return blocksList;}
+    public List<List<Block>> getBlocks() {
+        return blocksList;
+    }
 
     public Block getStart() {
         return start;
@@ -105,12 +99,12 @@ public abstract class Pathfinder implements Runnable {
         this.start = start;
     }
 
-    public void setEnd(Block end) {
-        this.end = end;
-    }
-
     public Block getEnd() {
         return end;
+    }
+
+    public void setEnd(Block end) {
+        this.end = end;
     }
 
     public boolean canMoveDiagonally() {
@@ -136,7 +130,7 @@ public abstract class Pathfinder implements Runnable {
     }
 
     private boolean isValidNeighbour(int row, int column) {
-        return ((row >= 0 && row < getBlocks().size()) && (column >= 0 && column < getBlocks().get(0).size()));
+        return ((row >= 0 && row < getBlocks().size()) && (column >= 0 && column < getBlocks().getFirst().size()));
     }
 
     public boolean[][] initializeVisited() {
@@ -146,7 +140,7 @@ public abstract class Pathfinder implements Runnable {
         return array;
     }
 
-    private void allBlocksAreWalls () {
+    private void allBlocksAreWalls() {
         for (List<Block> row : blocksList) {
             for (Block block : row) {
                 block.makeWall();
@@ -170,16 +164,17 @@ public abstract class Pathfinder implements Runnable {
             int pathColumn = (vector.get(1) / 2) + column;
             if (isValidNeighbour(tempRow, tempColumn)) {
                 neighbours.put(this.getBlocks().get(tempRow).get(tempColumn)
-                        ,this.getBlocks().get(pathRow).get(pathColumn)
+                        , this.getBlocks().get(pathRow).get(pathColumn)
                 );
             }
         }
         return neighbours;
     }
+
     public void createDFSMaze() {
         allBlocksAreWalls();
 
-        int sizeX = blocksList.get(0).size();
+        int sizeX = blocksList.getFirst().size();
         int sizeY = blocksList.size();
         boolean[][] visited = initializeVisited();
 
@@ -202,7 +197,7 @@ public abstract class Pathfinder implements Runnable {
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
                                     Map.Entry::getValue,
-                                    (a, b) -> a,
+                                    (a, _) -> a,
                                     HashMap::new
                             ));
 
@@ -229,7 +224,7 @@ public abstract class Pathfinder implements Runnable {
         Random random = new Random();
         allBlocksAreWalls();
         int randRow = new Random().nextInt(blocksList.size());
-        int randCol = new Random().nextInt(blocksList.get(0).size());
+        int randCol = new Random().nextInt(blocksList.getFirst().size());
         Block first = blocksList.get(randRow).get(randCol);
 
         first.makeWalked();
@@ -261,7 +256,6 @@ public abstract class Pathfinder implements Runnable {
             frontierMap.remove(randBlock);
         }
     }
-
 
     @Override
     public void run() {

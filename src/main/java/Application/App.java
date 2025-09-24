@@ -12,13 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class App {
-    /** CONSTANTS **/
-    private static final String FRAME_TITLE = "Pathfinder";
     public static final int BLOCK_NUMBER = 80; //60 // Keep below 150
-    public static final int ROUTE_PAINT_DELAY = 1; // ms
-    private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
-    private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
-
     public static final String A_STAR = "A-Star";
     public static final String DIJKSTRA = "Dijkstra";
     public static final String BEST_FIRST_SEARCH = "BestFirstSearch";
@@ -27,12 +21,6 @@ public class App {
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
     public static final String RANDOMISED_PRIMS = "Randomised Prim's";
     public static final String RANDOMIZED_DFS = "Randomised DFS";
-
-    private static final String[] ALGORITHMS =
-            {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
-    private static final String[] MAZES =
-            {RANDOMIZED_DFS, RANDOMISED_PRIMS};
-
     public static final Color BACKGROUND = new Color(0, 0, 0);
     public static final Color BLOCK_COLOR = new Color(139, 139, 144);
     public static final Color BLOCK_BORDER_COLOR = new Color(40, 40, 40);
@@ -42,16 +30,21 @@ public class App {
     public static final Color PATH_COLOR = new Color(229, 61, 61);
     public static final Color ACCENT_COLOR = new Color(2, 76, 71);
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
-    public static final Color CHECKED_COLOR = ACCENT_COLOR;
     public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
-
-    enum State {
-        PRE_START,
-        INITIALISE,
-        EDIT_MAP,
-        RUN
-    }
+    /**
+     * CONSTANTS
+     **/
+    private static final String FRAME_TITLE = "Pathfinder";
+    private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20, 20, 20, 20);
+    private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10, 23, 10, 23);
+    private static final String[] ALGORITHMS =
+            {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
     private static final String[] algorithmInfo = new String[ALGORITHMS.length];
+    private static final String[] MAZES =
+            {RANDOMIZED_DFS, RANDOMISED_PRIMS};
+    public static boolean isFadeChecked = true;
+    public static int paintDelay = 50;
+    public static boolean allowDiagonal = true;
     private JPanel globalPanel;
     private JPanel bottomPanel;
     private JPanel leftPanel;
@@ -70,15 +63,10 @@ public class App {
     private JList<String> mazeList;
     private JTextArea mazeTitleTextArea;
     private JTextArea mazeInfoTextArea;
-
     private int clickCount = 0;
     private Pathfinder pathfinder;
     private State state;
-    public static boolean isFadeChecked = true;
-    public static int paintDelay = 50;
-    public static boolean allowDiagonal = true;
     private boolean isDrawingWall = false;
-
     public App() {
         System.out.println("App: " + Thread.currentThread());
         Utils.parseAlgorithmInfo(algorithmInfo);
@@ -95,11 +83,49 @@ public class App {
         System.out.println("initPathfinder(): " + Math.floor(duration / 1000000f));
     }
 
+    /**
+     * Paints the route on the blocks provided with a delay between each block.
+     *
+     * @param blocks List of blocks representing the route to be painted.
+     */
+    public static void paintRoute(List<Block> blocks) {
+        for (Block block : blocks) {
+            block.makePath();
+
+            try {
+                Thread.sleep(App.paintDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+        }
+    }
+
+    public static void main(String[] args) {
+
+        JFrame frame = new JFrame(FRAME_TITLE);
+        frame.setResizable(true);
+        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        frame.setContentPane(new App().globalPanel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        long start = System.nanoTime();
+        frame.pack();
+        long end = System.nanoTime();
+        frame.setVisible(true);
+        long end2 = System.nanoTime();
+        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
+        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
+        System.out.println(Thread.currentThread());
+    }
+
+    /*
+        INITIALISATION-------------------------------------------------------------------------------------------------
+     */
 
     private void createUIComponents() {
         // GLOBAL PANEL --------------------------------------------------
         globalPanel = new JPanel();
-        globalPanel.setLayout(new BorderLayout(0,0));
+        globalPanel.setLayout(new BorderLayout(0, 0));
 
         // TOP PANEL
         JPanel topPanel = new JPanel();
@@ -109,7 +135,7 @@ public class App {
         JLabel topLabel = new JLabel("PATHFINDER");
         topLabel.setFont(new Font("Times New Roman", Font.BOLD, 40));
         topLabel.setForeground(TEXT_COLOR);
-        topLabel.setBorder(BorderFactory.createEmptyBorder(0,10,0,0));
+        topLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         topPanel.add(topLabel, BorderLayout.CENTER);
 
         globalPanel.add(topPanel, BorderLayout.NORTH);
@@ -138,14 +164,14 @@ public class App {
         sliderLabel.setBackground(PANEL_COLOUR);
         sliderLabel.setForeground(TEXT_COLOR);
         bottomPanel.add(sliderLabel);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         sliderValueLabel = new JLabel();
         sliderValueLabel.setFont(GLOBAL_FONT);
         sliderValueLabel.setBackground(PANEL_COLOUR);
         sliderValueLabel.setForeground(TEXT_COLOR);
-        sliderValueLabel.setPreferredSize(new Dimension(70,40));
-        sliderValueLabel.setMinimumSize(new Dimension(70,40));
+        sliderValueLabel.setPreferredSize(new Dimension(70, 40));
+        sliderValueLabel.setMinimumSize(new Dimension(70, 40));
 
         bottomPanel.add(sliderValueLabel);
 
@@ -156,7 +182,7 @@ public class App {
         delaySlider.setFont(GLOBAL_FONT);
         delaySlider.setBackground(BLOCK_BORDER_COLOR);
         delaySlider.setForeground(TEXT_COLOR);
-        delaySlider.setMaximumSize(new Dimension(150,35));
+        delaySlider.setMaximumSize(new Dimension(150, 35));
         delaySlider.setToolTipText("Delay");
 
         delaySlider.addChangeListener(changeEvent -> {
@@ -165,7 +191,7 @@ public class App {
         });
         sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
         bottomPanel.add(delaySlider);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         allowDiagonalCheckBox = new JCheckBox();
         allowDiagonalCheckBox.setAlignmentX(0f);
@@ -180,7 +206,7 @@ public class App {
         allowDiagonalCheckBox.addActionListener(x -> allowDiagonal = allowDiagonalCheckBox.isSelected());
         bottomPanel.add(allowDiagonalCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         fadeCheckBox = new JCheckBox();
         fadeCheckBox.setAlignmentX(0f);
@@ -195,34 +221,34 @@ public class App {
         fadeCheckBox.addActionListener(x -> isFadeChecked = fadeCheckBox.isSelected());
         bottomPanel.add(fadeCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         resetButton = new JButton();
         resetButton.setText("Reset");
         resetButton.setBackground(ACCENT_COLOR);
         resetButton.setForeground(TEXT_COLOR);
         resetButton.setFocusPainted(false);
-        resetButton.addActionListener(x -> resetApp());
+        resetButton.addActionListener(_ -> resetApp());
         resetButton.setFont(GLOBAL_FONT);
         allowDiagonalCheckBox.setBorder(resetButton.getBorder());
 
         bottomPanel.add(resetButton);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         runButton = new JButton();
         runButton.setText("Run");
         runButton.setBackground(ACCENT_COLOR);
         runButton.setForeground(TEXT_COLOR);
         runButton.setFocusPainted(false);
-        runButton.addActionListener(x -> runButtonClicked());
+        runButton.addActionListener(_ -> runButtonClicked());
         runButton.setFont(GLOBAL_FONT);
         bottomPanel.add(runButton);
 
 
         // CENTRE PANEL -----------------------------------------------------
         centrePanel = new GridPanel();//JPanel();
-        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0 ,0));
+        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0, 0));
         System.out.println(BLOCK_NUMBER * Utils.getAspectRatio());
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
@@ -230,7 +256,7 @@ public class App {
 
         // LEFT PANEL -----------------------------------------------------
         int leftPanelWidth = 300;
-        Border emptyBorder10 = BorderFactory.createEmptyBorder(10,10,10,10);
+        Border emptyBorder10 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
         Border listBorderInner = BorderFactory.createLineBorder(TEXT_COLOR, 4);
         Border listBorder = BorderFactory.createCompoundBorder(emptyBorder10, listBorderInner);
 
@@ -254,7 +280,7 @@ public class App {
         algorithmList.setFont(GLOBAL_FONT);
         algorithmList.addListSelectionListener(e -> {
             JList<String> list = (JList<String>) e.getSource();
-            int selected  = list.getSelectedIndex();
+            int selected = list.getSelectedIndex();
             infoTextArea.setText(algorithmInfo[selected]);
         });
         leftPanel.add(algorithmList);
@@ -307,7 +333,7 @@ public class App {
         mazeList.setFont(GLOBAL_FONT);
         mazeList.addListSelectionListener(e -> {
             JList<String> list = (JList<String>) e.getSource();
-            int selected  = list.getSelectedIndex();
+            int selected = list.getSelectedIndex();
             mazeInfoTextArea.setText(algorithmInfo[selected]);
         });
 
@@ -330,16 +356,12 @@ public class App {
         // GENERAL ------------------------------------------------------------------
 
         // Disable button-press with space-bar
-        InputMap im = (InputMap)UIManager.get("Button.focusInputMap");
+        InputMap im = (InputMap) UIManager.get("Button.focusInputMap");
         im.put(KeyStroke.getKeyStroke("pressed SPACE"), "none");
         im.put(KeyStroke.getKeyStroke("released SPACE"), "none");
         state = State.INITIALISE;
 
     }
-
-    /*
-        INITIALISATION-------------------------------------------------------------------------------------------------
-     */
 
     /**
      * Initializes the pathfinder and sets up the block grid and mouse listeners.
@@ -352,7 +374,6 @@ public class App {
         pathfinder.setBlocksList(blockGrid);
 
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
-        pathfinder.setVariableDelay(delaySlider.getValue());
 
         globalPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke('m'), "mAction");
         globalPanel.getActionMap().put("mAction", new AbstractAction() {
@@ -364,14 +385,19 @@ public class App {
         });
     }
 
+
+    /*
+        STATE --------------------------------------------------------------------------------------------------------
+     */
+
     /**
      * Creates a 2D grid of Block objects and adds mouse listeners to the centrePanel to handle block selection.
      */
-    private List<List<Block>>  createBlockGrid() {
+    private List<List<Block>> createBlockGrid() {
 
         double panelAspectRatio = Utils.getAspectRatio();
         List<List<Block>> tempList = new ArrayList<>();
-        for (int i = 0; i < BLOCK_NUMBER ; i++) {
+        for (int i = 0; i < BLOCK_NUMBER; i++) {
             tempList.add(i, new ArrayList<>());
             for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
                 Block current = new Block(i, j);
@@ -389,7 +415,6 @@ public class App {
 
                 System.out.println("Clicked block at row: " + row + ", column: " + col);
 
-
                 Block clickedBlock = pathfinder.getBlocks().get(row).get(col);
                 clickCount++;
                 if (clickCount == 1) {
@@ -401,17 +426,11 @@ public class App {
                     clickedBlock.makeStartEnd();
                     updateState();
                 }
-                //centrePanel.repaint();
             }
         });
 
         return tempList;
     }
-
-
-    /*
-        STATE --------------------------------------------------------------------------------------------------------
-     */
 
     private void updateState() {
         switch (state) {
@@ -441,7 +460,6 @@ public class App {
         }
     }
 
-
     private void goToMapEditState() {
         instructionsLabel.setText("Draw obstacles and then click 'Run' or press 'r'  to run the selected Pathfinder.");
         centrePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke('r'), "EnterAction");
@@ -458,10 +476,12 @@ public class App {
                 isDrawingWall = true;
                 setBlockAsWall(e);
             }
+
             @Override
             public void mouseReleased(MouseEvent e) {
                 isDrawingWall = false;
             }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 setBlockAsWall(e);
@@ -478,7 +498,6 @@ public class App {
         });
     }
 
-
     private void setBlockAsWall(MouseEvent e) {
         int col = e.getX() / 18;
         int row = e.getY() / 18;
@@ -490,11 +509,14 @@ public class App {
         }
     }
 
+    /*
+        LOGIC + UTILS -------------------------------------------------------------------------------------------------
+     */
+
     private void goToRunState() {
         instructionsLabel.setText("Pathfinder is running");
         centrePanel.resetKeyboardActions();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
-        //pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
         selectPathfinder();
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
@@ -503,10 +525,6 @@ public class App {
         algorithmThread.start();
 
     }
-
-    /*
-        LOGIC + UTILS -------------------------------------------------------------------------------------------------
-     */
 
     private void selectPathfinder() {
         switch (algorithmList.getSelectedValue()) {
@@ -550,24 +568,6 @@ public class App {
     }
 
     /**
-     * Paints the route on the blocks provided with a delay between each block.
-     *
-     * @param blocks List of blocks representing the route to be painted.
-     */
-    public static void paintRoute(List<Block> blocks) {
-        for (Block block : blocks) {
-            block.makePath();
-
-            try {
-                Thread.sleep(App.paintDelay);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-        }
-    }
-
-    /**
      * Resets the application to its initial state, clearing the grid and reinitializing the pathfinder.
      */
     public void resetApp() {
@@ -579,7 +579,6 @@ public class App {
         updateState();
 
         centrePanel.revalidate();
-        //centrePanel.repaint();
     }
 
 
@@ -589,20 +588,10 @@ public class App {
         }
     }
 
-    public static void main(String[] args) {
-
-        JFrame frame = new JFrame(FRAME_TITLE);
-        frame.setResizable(true);
-        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-        frame.setContentPane(new App().globalPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        long start = System.nanoTime();
-        frame.pack();
-        long end = System.nanoTime();
-        frame.setVisible(true);
-        long end2 = System.nanoTime();
-        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
-        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
-        System.out.println(Thread.currentThread());
+    enum State {
+        PRE_START,
+        INITIALISE,
+        EDIT_MAP,
+        RUN
     }
 }

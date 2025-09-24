@@ -1,11 +1,9 @@
 package Pathfinders;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Stack;
 
-import Application.App;
 import Application.Block;
 
 public class DepthFirstSearchPathfinder extends Pathfinder {

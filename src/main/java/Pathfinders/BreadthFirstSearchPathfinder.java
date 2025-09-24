@@ -1,11 +1,9 @@
 package Pathfinders;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.List;
 
-import Application.App;
 import Application.Block;
 
 public class BreadthFirstSearchPathfinder extends Pathfinder {
