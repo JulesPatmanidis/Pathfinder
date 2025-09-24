@@ -1,10 +1,11 @@
 package Application;
 
-import javax.swing.*;
+import Utilities.Utils;
 
-public class Block implements Comparable<Block>{
+public class Block implements Comparable<Block> {
 
-    private final mapButton button;
+    //private final mapButton button;
+    private final FadeRect rect;
     private final int row;
     private final int column;
     private transient Block parentBlock;
@@ -13,15 +14,14 @@ public class Block implements Comparable<Block>{
     private double distanceScore;
     private double scoreFromStart = Double.MAX_VALUE;
 
+    private BlockState state;
+
     public Block(int row, int column) {
         walkable = true;
         this.row = row;
         this.column = column;
-        button = new mapButton();
-    }
-
-    public mapButton getButton() {
-        return button;
+        rect = new FadeRect(row, column, 18, 18);
+        state = BlockState.WALKABLE;
     }
 
     public Block getParentBlock() {
@@ -64,6 +64,14 @@ public class Block implements Comparable<Block>{
         this.scoreFromStart = scoreFromStart;
     }
 
+    public BlockState getState() {
+        return state;
+    }
+
+    public FadeRect getRect() {
+        return rect;
+    }
+
     public void calcScoreFromStart(Block parent) {
         if (parent == null) {
             scoreFromStart = 0;
@@ -88,21 +96,43 @@ public class Block implements Comparable<Block>{
     }
 
     public void makeWall() {
-        this.getButton().setBackground(App.OBSTACLE_COLOR);
-        this.getButton().setEnabled(false);
+        this.state = BlockState.NON_WALKABLE;
         this.setWalkable(false);
     }
 
-    public void makePath() {
-        this.getButton().setBackground(App.BLOCK_COLOR);
-        this.getButton().setEnabled(true);
+    public void makeWalkable() {
+        this.state = BlockState.WALKABLE;
         this.setWalkable(true);
     }
+
+    public void makeWalked() {
+        Utils.addDelay(App.paintDelay);
+        this.state = BlockState.WALKED;
+        this.rect.startAnimation();
+        this.setWalkable(true);
+    }
+
+    public void makeNeighbour() {
+        Utils.addDelay(App.paintDelay);
+        this.rect.startAnimation();
+        this.state = BlockState.NEIGHBOUR;
+    }
+
+    public void makeStartEnd() {
+        this.state = BlockState.START_END;
+        this.setWalkable(true);
+    }
+
+    public void makePath() {
+        Utils.addDelay(App.paintDelay);
+        this.rect.startAnimation();
+        this.state = BlockState.PATH;
+    }
+
 
     @Override
     public int compareTo(Block o) {
         return Double.compare(this.totalScore, o.totalScore);
     }
-
 
 }

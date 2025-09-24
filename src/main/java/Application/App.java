@@ -7,34 +7,20 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class App {
-    /** CONSTANTS **/
-    private static final String FRAME_TITLE = "Pathfinder";
     public static final int BLOCK_NUMBER = 80; //60 // Keep below 150
-    public static final int ROUTE_PAINT_DELAY = 8; // ms
-    private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20,20,20,20);
-    private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10,23,10,23);
-
     public static final String A_STAR = "A-Star";
     public static final String DIJKSTRA = "Dijkstra";
     public static final String BEST_FIRST_SEARCH = "BestFirstSearch";
     public static final String BREADTH_FIRST_SEARCH = "BreadthFirstSearch";
     public static final String DEPTH_FIRST_SEARCH = "DepthFirstSearch";
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
-    public static final String RANDOMISED_PRIMS = "Randomised DFS";
-    public static final String RANDOMIZED_DFS = "Randomised Prim's";
-
-    private static final String[] ALGORITHMS =
-            {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
-    private static final String[] MAZES =
-            {RANDOMIZED_DFS, RANDOMISED_PRIMS};
-
+    public static final String RANDOMISED_PRIMS = "Randomised Prim's";
+    public static final String RANDOMIZED_DFS = "Randomised DFS";
     public static final Color BACKGROUND = new Color(0, 0, 0);
     public static final Color BLOCK_COLOR = new Color(139, 139, 144);
     public static final Color BLOCK_BORDER_COLOR = new Color(40, 40, 40);
@@ -44,21 +30,25 @@ public class App {
     public static final Color PATH_COLOR = new Color(229, 61, 61);
     public static final Color ACCENT_COLOR = new Color(2, 76, 71);
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
-    public static final Color CHECKED_COLOR = ACCENT_COLOR;
-    //public static final Color RESET_COLOR = ACCENT_COLOR;
     public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
-
-    enum State {
-        PRE_START,
-        INITIALISE,
-        EDIT_MAP,
-        RUN
-    }
+    /**
+     * CONSTANTS
+     **/
+    private static final String FRAME_TITLE = "Pathfinder";
+    private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20, 20, 20, 20);
+    private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10, 23, 10, 23);
+    private static final String[] ALGORITHMS =
+            {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
     private static final String[] algorithmInfo = new String[ALGORITHMS.length];
+    private static final String[] MAZES =
+            {RANDOMIZED_DFS, RANDOMISED_PRIMS};
+    public static boolean isFadeChecked = true;
+    public static int paintDelay = 50;
+    public static boolean allowDiagonal = true;
     private JPanel globalPanel;
     private JPanel bottomPanel;
     private JPanel leftPanel;
-    private JPanel centrePanel;
+    private GridPanel centrePanel;
     private JButton resetButton;
     private JButton runButton;
     private JList<String> algorithmList;
@@ -73,14 +63,10 @@ public class App {
     private JList<String> mazeList;
     private JTextArea mazeTitleTextArea;
     private JTextArea mazeInfoTextArea;
-
     private int clickCount = 0;
     private Pathfinder pathfinder;
     private State state;
-    public static boolean isFadeChecked = true;
-    public static int paintDelay = 50;
-    public static boolean allowDiagonal = true;
-
+    private boolean isDrawingWall = false;
     public App() {
         System.out.println("App: " + Thread.currentThread());
         Utils.parseAlgorithmInfo(algorithmInfo);
@@ -97,14 +83,51 @@ public class App {
         System.out.println("initPathfinder(): " + Math.floor(duration / 1000000f));
     }
 
+    /**
+     * Paints the route on the blocks provided with a delay between each block.
+     *
+     * @param blocks List of blocks representing the route to be painted.
+     */
+    public static void paintRoute(List<Block> blocks) {
+        for (Block block : blocks) {
+            block.makePath();
+
+            try {
+                Thread.sleep(App.paintDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+        }
+    }
+
+    public static void main(String[] args) {
+
+        JFrame frame = new JFrame(FRAME_TITLE);
+        frame.setResizable(true);
+        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        frame.setContentPane(new App().globalPanel);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        long start = System.nanoTime();
+        frame.pack();
+        long end = System.nanoTime();
+        frame.setVisible(true);
+        long end2 = System.nanoTime();
+        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
+        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
+        System.out.println(Thread.currentThread());
+    }
+
+    /*
+        INITIALISATION-------------------------------------------------------------------------------------------------
+     */
 
     private void createUIComponents() {
         // GLOBAL PANEL --------------------------------------------------
         globalPanel = new JPanel();
-        globalPanel.setLayout(new BorderLayout(0,0));
+        globalPanel.setLayout(new BorderLayout(0, 0));
 
         // TOP PANEL
-
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BorderLayout());
         topPanel.setBackground(PANEL_COLOUR);
@@ -112,10 +135,11 @@ public class App {
         JLabel topLabel = new JLabel("PATHFINDER");
         topLabel.setFont(new Font("Times New Roman", Font.BOLD, 40));
         topLabel.setForeground(TEXT_COLOR);
-        topLabel.setBorder(BorderFactory.createEmptyBorder(0,10,0,0));
+        topLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         topPanel.add(topLabel, BorderLayout.CENTER);
 
         globalPanel.add(topPanel, BorderLayout.NORTH);
+
         // BOTTOM PANEL -----------------------------------------------------
 
         bottomPanel = new JPanel();
@@ -134,21 +158,20 @@ public class App {
         bottomPanel.add(instructionsLabel);
 
         bottomPanel.add(Box.createHorizontalGlue());
-        //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
         sliderLabel = new JLabel("Delay (ms):");
         sliderLabel.setFont(GLOBAL_FONT);
         sliderLabel.setBackground(PANEL_COLOUR);
         sliderLabel.setForeground(TEXT_COLOR);
         bottomPanel.add(sliderLabel);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         sliderValueLabel = new JLabel();
         sliderValueLabel.setFont(GLOBAL_FONT);
         sliderValueLabel.setBackground(PANEL_COLOUR);
         sliderValueLabel.setForeground(TEXT_COLOR);
-        sliderValueLabel.setPreferredSize(new Dimension(70,40));
-        sliderValueLabel.setMinimumSize(new Dimension(70,40));
+        sliderValueLabel.setPreferredSize(new Dimension(70, 40));
+        sliderValueLabel.setMinimumSize(new Dimension(70, 40));
 
         bottomPanel.add(sliderValueLabel);
 
@@ -159,7 +182,7 @@ public class App {
         delaySlider.setFont(GLOBAL_FONT);
         delaySlider.setBackground(BLOCK_BORDER_COLOR);
         delaySlider.setForeground(TEXT_COLOR);
-        delaySlider.setMaximumSize(new Dimension(150,35));
+        delaySlider.setMaximumSize(new Dimension(150, 35));
         delaySlider.setToolTipText("Delay");
 
         delaySlider.addChangeListener(changeEvent -> {
@@ -168,7 +191,7 @@ public class App {
         });
         sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
         bottomPanel.add(delaySlider);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         allowDiagonalCheckBox = new JCheckBox();
         allowDiagonalCheckBox.setAlignmentX(0f);
@@ -183,7 +206,7 @@ public class App {
         allowDiagonalCheckBox.addActionListener(x -> allowDiagonal = allowDiagonalCheckBox.isSelected());
         bottomPanel.add(allowDiagonalCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         fadeCheckBox = new JCheckBox();
         fadeCheckBox.setAlignmentX(0f);
@@ -198,34 +221,34 @@ public class App {
         fadeCheckBox.addActionListener(x -> isFadeChecked = fadeCheckBox.isSelected());
         bottomPanel.add(fadeCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         resetButton = new JButton();
         resetButton.setText("Reset");
         resetButton.setBackground(ACCENT_COLOR);
         resetButton.setForeground(TEXT_COLOR);
         resetButton.setFocusPainted(false);
-        resetButton.addActionListener(x -> resetApp());
+        resetButton.addActionListener(_ -> resetApp());
         resetButton.setFont(GLOBAL_FONT);
         allowDiagonalCheckBox.setBorder(resetButton.getBorder());
 
         bottomPanel.add(resetButton);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
         runButton = new JButton();
         runButton.setText("Run");
         runButton.setBackground(ACCENT_COLOR);
         runButton.setForeground(TEXT_COLOR);
         runButton.setFocusPainted(false);
-        runButton.addActionListener(x -> runButtonClicked());
+        runButton.addActionListener(_ -> runButtonClicked());
         runButton.setFont(GLOBAL_FONT);
         bottomPanel.add(runButton);
 
 
         // CENTRE PANEL -----------------------------------------------------
-        centrePanel = new JPanel();
-        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0 ,0));
+        centrePanel = new GridPanel();//JPanel();
+        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0, 0));
         System.out.println(BLOCK_NUMBER * Utils.getAspectRatio());
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
@@ -233,7 +256,7 @@ public class App {
 
         // LEFT PANEL -----------------------------------------------------
         int leftPanelWidth = 300;
-        Border emptyBorder10 = BorderFactory.createEmptyBorder(10,10,10,10);
+        Border emptyBorder10 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
         Border listBorderInner = BorderFactory.createLineBorder(TEXT_COLOR, 4);
         Border listBorder = BorderFactory.createCompoundBorder(emptyBorder10, listBorderInner);
 
@@ -257,7 +280,7 @@ public class App {
         algorithmList.setFont(GLOBAL_FONT);
         algorithmList.addListSelectionListener(e -> {
             JList<String> list = (JList<String>) e.getSource();
-            int selected  = list.getSelectedIndex();
+            int selected = list.getSelectedIndex();
             infoTextArea.setText(algorithmInfo[selected]);
         });
         leftPanel.add(algorithmList);
@@ -310,7 +333,7 @@ public class App {
         mazeList.setFont(GLOBAL_FONT);
         mazeList.addListSelectionListener(e -> {
             JList<String> list = (JList<String>) e.getSource();
-            int selected  = list.getSelectedIndex();
+            int selected = list.getSelectedIndex();
             mazeInfoTextArea.setText(algorithmInfo[selected]);
         });
 
@@ -333,23 +356,24 @@ public class App {
         // GENERAL ------------------------------------------------------------------
 
         // Disable button-press with space-bar
-        InputMap im = (InputMap)UIManager.get("Button.focusInputMap");
+        InputMap im = (InputMap) UIManager.get("Button.focusInputMap");
         im.put(KeyStroke.getKeyStroke("pressed SPACE"), "none");
         im.put(KeyStroke.getKeyStroke("released SPACE"), "none");
         state = State.INITIALISE;
 
     }
 
-    /*
-        INITIALISATION-------------------------------------------------------------------------------------------------
+    /**
+     * Initializes the pathfinder and sets up the block grid and mouse listeners.
      */
-
-    // CHANGE LATER
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
-        pathfinder.setBlocksList(createBlockGrid());
+        List<List<Block>> blockGrid = createBlockGrid();
+
+        centrePanel.setBlockList(blockGrid);
+        pathfinder.setBlocksList(blockGrid);
+
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
-        pathfinder.setVariableDelay(delaySlider.getValue());
 
         globalPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke('m'), "mAction");
         globalPanel.getActionMap().put("mAction", new AbstractAction() {
@@ -361,57 +385,52 @@ public class App {
         });
     }
 
-    /**
-     * Adds JButtons to the mainPanel
-     */
-    private List<List<Block>>  createBlockGrid() {
-        double panelAspectRatio = Utils.getAspectRatio();
-        List<List<Block>> tempList = new ArrayList<>();
-        for (int i = 0; i < BLOCK_NUMBER ; i++) {
-            tempList.add(i, new ArrayList<>());
-            for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
-                Block current = new Block(i, j);
-                initializeBlockButton(current);
-                tempList.get(i).add(j, current);
-                centrePanel.add(current.getButton());
-                //System.out.printf("Added %d, %d\n", i, j);
-            }
-        }
-        return tempList;
-        //pathfinder.setBlocksList(tempList);
-    }
-
-    /**
-     * Initializes the JButton on the blocks array.
-     * @param block block
-     */
-    public void initializeBlockButton(Block block) {
-        block.getButton().setBackground(BLOCK_COLOR);
-
-        int offset = Toolkit.getDefaultToolkit().getScreenSize().height - 200;
-        int buttonSize = (int) Math.floor(offset / (double) BLOCK_NUMBER);
-        block.getButton().setPreferredSize(new Dimension(buttonSize,buttonSize));
-
-        block.getButton().setBorder(BorderFactory.createMatteBorder(1,0,0,1, BLOCK_BORDER_COLOR));
-        String text = "" + block.getRow() + ", " + block.getColumn();
-        //block.getButton().setText(text);
-        block.getButton().addActionListener(e -> {
-            block.getButton().setBackground(PRESSED_COLOR);
-
-            clickCount++;
-            if (clickCount == 1) {
-                pathfinder.setStart(block);
-            }
-            if (clickCount == 2) {
-                pathfinder.setEnd(block);
-                updateState();
-            }
-        });
-    }
 
     /*
         STATE --------------------------------------------------------------------------------------------------------
      */
+
+    /**
+     * Creates a 2D grid of Block objects and adds mouse listeners to the centrePanel to handle block selection.
+     */
+    private List<List<Block>> createBlockGrid() {
+
+        double panelAspectRatio = Utils.getAspectRatio();
+        List<List<Block>> tempList = new ArrayList<>();
+        for (int i = 0; i < BLOCK_NUMBER; i++) {
+            tempList.add(i, new ArrayList<>());
+            for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
+                Block current = new Block(i, j);
+                tempList.get(i).add(j, current);
+            }
+        }
+
+        centrePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("centrePanel clicked at: " + e.getPoint());
+                // Add your logic here
+                int col = e.getX() / 18;
+                int row = e.getY() / 18;
+
+                System.out.println("Clicked block at row: " + row + ", column: " + col);
+
+                Block clickedBlock = pathfinder.getBlocks().get(row).get(col);
+                clickCount++;
+                if (clickCount == 1) {
+                    pathfinder.setStart(clickedBlock);
+                    clickedBlock.makeStartEnd();
+                }
+                if (clickCount == 2) {
+                    pathfinder.setEnd(clickedBlock);
+                    clickedBlock.makeStartEnd();
+                    updateState();
+                }
+            }
+        });
+
+        return tempList;
+    }
 
     private void updateState() {
         switch (state) {
@@ -421,6 +440,7 @@ public class App {
                 state = State.INITIALISE;
                 break;
             case INITIALISE:
+
                 goToMapEditState();
                 state = State.EDIT_MAP;
                 break;
@@ -449,13 +469,54 @@ public class App {
                 updateState();
             }
         });
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockClick);
+
+        centrePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                isDrawingWall = true;
+                setBlockAsWall(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                isDrawingWall = false;
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                setBlockAsWall(e);
+            }
+        });
+
+        centrePanel.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (isDrawingWall) {
+                    setBlockAsWall(e);
+                }
+            }
+        });
     }
+
+    private void setBlockAsWall(MouseEvent e) {
+        int col = e.getX() / 18;
+        int row = e.getY() / 18;
+        List<List<Block>> blocks = pathfinder.getBlocks();
+        if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
+            Block block = blocks.get(row).get(col);
+            block.setWalkable(false);
+            block.makeWall();
+        }
+    }
+
+    /*
+        LOGIC + UTILS -------------------------------------------------------------------------------------------------
+     */
 
     private void goToRunState() {
         instructionsLabel.setText("Pathfinder is running");
         centrePanel.resetKeyboardActions();
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockFinal);
+        Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         selectPathfinder();
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
@@ -464,51 +525,6 @@ public class App {
         algorithmThread.start();
 
     }
-
-    private void updateBlockFinal(Block block) {
-        clearListeners(block.getButton());
-    }
-
-    private void goToHoverState() {
-        pathfinder.getBlocks().stream().flatMap(List::stream).forEach(this::updateBlockHover);
-    }
-
-    private void updateBlockClick(Block block) {
-        clearListeners(block.getButton());
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {        //Application.Block set to be obstacle
-                if (e.getSource() instanceof JButton) {
-                    block.getButton().setBackground(OBSTACLE_COLOR);
-                    block.setWalkable(false);
-                    goToHoverState();
-                }
-            }
-        });
-    }
-
-    private void updateBlockHover(Block block) {
-        clearListeners(block.getButton());
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                if (e.getSource() instanceof JButton) {
-                    block.getButton().setBackground(OBSTACLE_COLOR);
-                    block.setWalkable(false);
-                }
-            }
-        });
-        block.getButton().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                goToMapEditState();
-            }
-        });
-    }
-
-    /*
-        LOGIC + UTILS -------------------------------------------------------------------------------------------------
-     */
 
     private void selectPathfinder() {
         switch (algorithmList.getSelectedValue()) {
@@ -551,42 +567,20 @@ public class App {
         }
     }
 
-    private void clearListeners(JButton block) {
-        Arrays.stream(block.getActionListeners()).forEach(block::removeActionListener);
-        Arrays.stream(block.getMouseListeners()).forEach(block::removeMouseListener);
-    }
-
-    public static void paintRoute(List<Block> blocks) {
-        //System.out.println(Thread.currentThread().getName() + " paintRoute");
-        for (Block block : blocks) {
-            block.getButton().paintPath();
-        }
-
-        try {
-            //TimeUnit.MILLISECONDS.sleep(ROUTE_PAINT_DELAY);
-            SwingUtilities.invokeAndWait(() -> {
-                blocks.get(0).getButton().setBackground(PRESSED_COLOR);
-                blocks.get(blocks.size() - 1).getButton().setBackground(PRESSED_COLOR);
-            });
-        } catch (InterruptedException e) {
-            System.err.println("Error: Thread was interrupted");
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
+    /**
+     * Resets the application to its initial state, clearing the grid and reinitializing the pathfinder.
+     */
     public void resetApp() {
         this.centrePanel.removeAll();
         initPathfinder();
         state = State.PRE_START;
+        clickCount = 0;
 
         updateState();
 
         centrePanel.revalidate();
-        centrePanel.repaint();
     }
+
 
     private void runButtonClicked() {
         if (state == State.EDIT_MAP) {
@@ -594,20 +588,10 @@ public class App {
         }
     }
 
-    public static void main(String[] args) {
-
-        JFrame frame = new JFrame(FRAME_TITLE);
-        frame.setResizable(false);
-        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-        frame.setContentPane(new App().globalPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        long start = System.nanoTime();
-        frame.pack();
-        long end = System.nanoTime();
-        frame.setVisible(true);
-        long end2 = System.nanoTime();
-        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
-        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
-        System.out.println(Thread.currentThread());
+    enum State {
+        PRE_START,
+        INITIALISE,
+        EDIT_MAP,
+        RUN
     }
 }

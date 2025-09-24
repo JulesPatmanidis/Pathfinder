@@ -1,11 +1,9 @@
 package Pathfinders;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Stack;
 
-import Application.App;
 import Application.Block;
 
 public class DepthFirstSearchPathfinder extends Pathfinder {
@@ -53,7 +51,8 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                     continue;
                 }
 
-                neighbourBlock.getButton().paintNeighbour();
+                //neighbourBlock.getButton().paintNeighbour();
+                neighbourBlock.makeNeighbour();
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 neighbourBlock.calcScoreFromStart(currentBlock);
