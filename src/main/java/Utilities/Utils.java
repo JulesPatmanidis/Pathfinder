@@ -1,31 +1,32 @@
 package Utilities;
 
-import java.awt.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 
 public class Utils {
-    public static void parseAlgorithmInfo(String[] algorithmInfo) {
-        try {
-            File file = new File("src/main/java/resources/AlgorithmInfo.txt");
-            FileReader reader = new FileReader(file);
-            BufferedReader bufferedReader = new BufferedReader(reader);
-            String currentLine;
-            String currentLine2;
-            int count = 0;
-            do {
-                currentLine = bufferedReader.readLine();
-                algorithmInfo[count] = currentLine;
-                count++;
-            } while (currentLine != null && count < algorithmInfo.length);
+    public static List<String> parseAlgorithmInfo() throws IOException {
+        try (InputStream in = Utils.class.getClassLoader()
+                .getResourceAsStream("AlgorithmInfo.txt")) {
 
+            if (in == null) {
+                throw new FileNotFoundException("AlgorithmInfo.txt not found in classpath");
+            }
 
-        } catch (IOException e) {
-            System.err.println("Algorithm info parsing failed");
-            e.printStackTrace();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(in, StandardCharsets.UTF_8))) {
+
+                List<String> lines = new ArrayList<>();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    lines.add(line);
+                }
+                return lines;
+            }
         }
     }
 

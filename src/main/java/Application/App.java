@@ -7,6 +7,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,7 +70,15 @@ public class App {
     private boolean isDrawingWall = false;
     public App() {
         System.out.println("App: " + Thread.currentThread());
-        Utils.parseAlgorithmInfo(algorithmInfo);
+        try {
+            List<String> algorithmInfoLines = Utils.parseAlgorithmInfo();
+            for (int i = 0; i < algorithmInfo.length && i < algorithmInfoLines.size(); i++) {
+                algorithmInfo[i] = algorithmInfoLines.get(i);
+            }
+        } catch (IOException e) {
+            System.err.println("Algorithm info parsing failed");
+            e.printStackTrace();
+        }
         long startTime = System.nanoTime();
         createUIComponents();
         long endTime = System.nanoTime();
