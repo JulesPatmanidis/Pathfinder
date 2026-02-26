@@ -13,7 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class App {
-    public static final int BLOCK_NUMBER = 80; //60 // Keep below 150
+    private static final int DEFAULT_GRID_ROWS = 80;
+    private static final int DEFAULT_CELL_SIZE = 18;
     public static final String A_STAR = "A-Star";
     public static final String DIJKSTRA = "Dijkstra";
     public static final String BEST_FIRST_SEARCH = "BestFirstSearch";
@@ -50,12 +51,16 @@ public class App {
     private JPanel bottomPanel;
     private JPanel leftPanel;
     private GridPanel centrePanel;
+    private JLabel fpsLabel;
+    private Timer fpsLabelTimer;
     private JButton resetButton;
     private JButton runButton;
     private JList<String> algorithmList;
     private JLabel instructionsLabel;
     private JCheckBox allowDiagonalCheckBox;
     private JCheckBox fadeCheckBox;
+    private JSpinner cellSizeSpinner;
+    private JButton applyGridButton;
     private JSlider delaySlider;
     private JLabel sliderLabel;
     private JLabel sliderValueLabel;
@@ -68,6 +73,20 @@ public class App {
     private Pathfinder pathfinder;
     private State state;
     private boolean isDrawingWall = false;
+    private GridConfig gridConfig;
+
+    private static final class GridConfig {
+        private final int rows;
+        private final int cols;
+        private final int cellSize;
+
+        private GridConfig(int rows, int cols, int cellSize) {
+            this.rows = rows;
+            this.cols = cols;
+            this.cellSize = cellSize;
+        }
+    }
+
     public App() {
         System.out.println("App: " + Thread.currentThread());
         try {
@@ -79,6 +98,7 @@ public class App {
             System.err.println("Algorithm info parsing failed");
             e.printStackTrace();
         }
+        gridConfig = createDefaultGridConfig();
         long startTime = System.nanoTime();
         createUIComponents();
         long endTime = System.nanoTime();
@@ -140,6 +160,12 @@ public class App {
         topLabel.setForeground(TEXT_COLOR);
         topLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         topPanel.add(topLabel, BorderLayout.CENTER);
+
+        fpsLabel = new JLabel("FPS: --");
+        fpsLabel.setFont(new Font("Times New Roman", Font.PLAIN, 18));
+        fpsLabel.setForeground(TEXT_COLOR);
+        fpsLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        topPanel.add(fpsLabel, BorderLayout.EAST);
 
         globalPanel.add(topPanel, BorderLayout.NORTH);
 
@@ -226,6 +252,27 @@ public class App {
 
         bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
 
+        JLabel cellSizeLabel = new JLabel("Cell Size:");
+        cellSizeLabel.setFont(GLOBAL_FONT);
+        cellSizeLabel.setForeground(TEXT_COLOR);
+        bottomPanel.add(cellSizeLabel);
+        bottomPanel.add(Box.createRigidArea(new Dimension(4, 0)));
+
+        cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 4, 40, 1));
+        cellSizeSpinner.setMaximumSize(new Dimension(60, 35));
+        bottomPanel.add(cellSizeSpinner);
+        bottomPanel.add(Box.createRigidArea(new Dimension(8, 0)));
+
+        applyGridButton = new JButton("Apply Grid");
+        applyGridButton.setBackground(ACCENT_COLOR);
+        applyGridButton.setForeground(TEXT_COLOR);
+        applyGridButton.setFocusPainted(false);
+        applyGridButton.setFont(GLOBAL_FONT);
+        applyGridButton.addActionListener(_ -> applyGridSettings());
+        bottomPanel.add(applyGridButton);
+
+        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+
         resetButton = new JButton();
         resetButton.setText("Reset");
         resetButton.setBackground(ACCENT_COLOR);
@@ -251,11 +298,12 @@ public class App {
 
         // CENTRE PANEL -----------------------------------------------------
         centrePanel = new GridPanel();//JPanel();
-        centrePanel.setLayout(new GridLayout(BLOCK_NUMBER, (int) (BLOCK_NUMBER * Utils.getAspectRatio()), 0, 0));
-        System.out.println(BLOCK_NUMBER * Utils.getAspectRatio());
+        applyGridLayout();
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
         globalPanel.add(centrePanel, BorderLayout.CENTER);
+        fpsLabelTimer = new Timer(250, _ -> fpsLabel.setText("FPS: " + centrePanel.getCurrentFps()));
+        fpsLabelTimer.start();
 
         // LEFT PANEL -----------------------------------------------------
         int leftPanelWidth = 300;
@@ -371,6 +419,7 @@ public class App {
      */
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
+        applyGridLayout();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
@@ -400,13 +449,11 @@ public class App {
      * Creates a 2D grid of Block objects and adds mouse listeners to the centrePanel to handle block selection.
      */
     private List<List<Block>> createBlockGrid() {
-
-        double panelAspectRatio = Utils.getAspectRatio();
         List<List<Block>> tempList = new ArrayList<>();
-        for (int i = 0; i < BLOCK_NUMBER; i++) {
+        for (int i = 0; i < gridConfig.rows; i++) {
             tempList.add(i, new ArrayList<>());
-            for (int j = 0; j < (int) (BLOCK_NUMBER * panelAspectRatio); j++) {
-                Block current = new Block(i, j);
+            for (int j = 0; j < gridConfig.cols; j++) {
+                Block current = new Block(i, j, gridConfig.cellSize);
                 tempList.get(i).add(j, current);
             }
         }
@@ -416,8 +463,8 @@ public class App {
             public void mouseClicked(MouseEvent e) {
                 System.out.println("centrePanel clicked at: " + e.getPoint());
                 // Add your logic here
-                int col = e.getX() / 18;
-                int row = e.getY() / 18;
+                int col = e.getX() / gridConfig.cellSize;
+                int row = e.getY() / gridConfig.cellSize;
 
                 System.out.println("Clicked block at row: " + row + ", column: " + col);
 
@@ -516,8 +563,8 @@ public class App {
         if (state != State.EDIT_MAP) {
             return;
         }
-        int col = e.getX() / 18;
-        int row = e.getY() / 18;
+        int col = e.getX() / gridConfig.cellSize;
+        int row = e.getY() / gridConfig.cellSize;
         List<List<Block>> blocks = pathfinder.getBlocks();
         if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
             Block block = blocks.get(row).get(col);
@@ -595,6 +642,7 @@ public class App {
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
+        isDrawingWall = false;
         this.centrePanel.removeAll();
         initPathfinder();
         state = State.PRE_START;
@@ -610,6 +658,49 @@ public class App {
         if (state == State.EDIT_MAP) {
             updateState();
         }
+    }
+
+    private GridConfig createDefaultGridConfig() {
+        int rows = DEFAULT_GRID_ROWS;
+        int cols = Math.max(5, (int) Math.round(rows * Utils.getAspectRatio()));
+        return new GridConfig(rows, cols, DEFAULT_CELL_SIZE);
+    }
+
+    private void applyGridLayout() {
+        if (centrePanel != null && gridConfig != null) {
+            centrePanel.setLayout(new GridLayout(gridConfig.rows, gridConfig.cols, 0, 0));
+        }
+    }
+
+    private void applyGridSettings() {
+        GridConfig newGridConfig = createGridConfigForPane((Integer) cellSizeSpinner.getValue());
+        if (newGridConfig.rows == gridConfig.rows
+                && newGridConfig.cols == gridConfig.cols
+                && newGridConfig.cellSize == gridConfig.cellSize) {
+            return;
+        }
+        gridConfig = newGridConfig;
+        resetApp();
+    }
+
+    private GridConfig createGridConfigForPane(int cellSize) {
+        if (centrePanel == null) {
+            int rows = DEFAULT_GRID_ROWS;
+            int cols = Math.max(5, (int) Math.round(rows * Utils.getAspectRatio()));
+            return new GridConfig(rows, cols, cellSize);
+        }
+
+        Insets insets = centrePanel.getInsets();
+        int usableWidth = centrePanel.getWidth() - insets.left - insets.right;
+        int usableHeight = centrePanel.getHeight() - insets.top - insets.bottom;
+
+        if (usableWidth <= 0 || usableHeight <= 0) {
+            return new GridConfig(gridConfig.rows, gridConfig.cols, cellSize);
+        }
+
+        int rows = Math.max(1, usableHeight / cellSize);
+        int cols = Math.max(1, usableWidth / cellSize);
+        return new GridConfig(rows, cols, cellSize);
     }
 
     enum State {

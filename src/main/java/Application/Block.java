@@ -16,11 +16,11 @@ public class Block implements Comparable<Block> {
 
     private BlockState state;
 
-    public Block(int row, int column) {
+    public Block(int row, int column, int cellSize) {
         walkable = true;
         this.row = row;
         this.column = column;
-        rect = new FadeRect(row, column, 18, 18);
+        rect = new FadeRect(row, column, cellSize, cellSize);
         state = BlockState.WALKABLE;
     }
 
@@ -114,8 +114,8 @@ public class Block implements Comparable<Block> {
 
     public void makeNeighbour() {
         Utils.addDelay(App.paintDelay);
-        this.rect.startAnimation();
         this.state = BlockState.NEIGHBOUR;
+        this.rect.startAnimation();
     }
 
     public void makeStartEnd() {
@@ -125,8 +125,8 @@ public class Block implements Comparable<Block> {
 
     public void makePath() {
         Utils.addDelay(App.paintDelay);
-        this.rect.startAnimation();
         this.state = BlockState.PATH;
+        this.rect.startAnimation();
     }
 
 

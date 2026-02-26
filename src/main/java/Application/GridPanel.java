@@ -8,7 +8,7 @@ import java.util.List;
 
 public class GridPanel extends JPanel {
 
-    private final Timer repaintTimer = new Timer(16, _ -> {
+    private final Timer repaintTimer = new Timer(16, e -> {
         // Update fade ratios for animating rectangles
         for (FadeRect rect : FadeRect.getAnimatingRects()) {
             rect.incrementFadeRatio();
@@ -17,27 +17,37 @@ public class GridPanel extends JPanel {
     });
 
     private List<List<Block>> blockList;
-
-    {
-        repaintTimer.start();
-    }
+    private long fpsWindowStartNanos = System.nanoTime();
+    private int framesInWindow = 0;
+    private int currentFps = 0;
 
     public GridPanel() {
         super();
+        repaintTimer.start();
     }
 
     public void setBlockList(List<List<Block>> blockList) {
         this.blockList = blockList;
+        FadeRect.clearAnimatingRects();
+        revalidate();
+        repaint();
+    }
+
+    public int getCurrentFps() {
+        return currentFps;
     }
 
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
+        updateFpsCounter();
 
         // Draw the insides of the blocks
         if (blockList != null) {
+            int cellSize = 0;
             for (List<Block> row : blockList) {
                 for (Block block : row) {
+                    cellSize = block.getRect().width;
                     switch (block.getState()) {
                         case START_END -> g.setColor(App.PRESSED_COLOR);
                         case WALKED -> {
@@ -78,16 +88,29 @@ public class GridPanel extends JPanel {
             }
 
             // Draw the borders of the blocks
-            g.setColor(App.BLOCK_BORDER_COLOR);
-            for (List<Block> row : blockList) {
-                for (Block block : row) {
-                    g.drawRect(
-                            block.getRect().x,
-                            block.getRect().y,
-                            block.getRect().width,
-                            block.getRect().height);
+            if (cellSize > 8) {
+                g.setColor(App.BLOCK_BORDER_COLOR);
+                for (List<Block> row : blockList) {
+                    for (Block block : row) {
+                        g.drawRect(
+                                block.getRect().x,
+                                block.getRect().y,
+                                block.getRect().width,
+                                block.getRect().height);
+                    }
                 }
             }
+        }
+    }
+
+    private void updateFpsCounter() {
+        framesInWindow++;
+        long now = System.nanoTime();
+        long elapsed = now - fpsWindowStartNanos;
+        if (elapsed >= 1_000_000_000L) {
+            currentFps = (int) Math.round((framesInWindow * 1_000_000_000.0) / elapsed);
+            framesInWindow = 0;
+            fpsWindowStartNanos = now;
         }
     }
 }

@@ -1,6 +1,5 @@
 package Application;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -19,6 +18,10 @@ public class FadeRect extends Rectangle {
 
     public static java.util.List<FadeRect> getAnimatingRects() {
         return animatingRects;
+    }
+
+    public static void clearAnimatingRects() {
+        animatingRects.clear();
     }
 
     public boolean isInAnimation() {
