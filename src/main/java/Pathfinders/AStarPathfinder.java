@@ -2,7 +2,6 @@ package Pathfinders;
 
 import java.util.*;
 import java.util.List;
-import java.util.stream.Stream;
 import Application.Block;
 
 
@@ -11,60 +10,76 @@ public class AStarPathfinder extends Pathfinder {
     private static final int OPEN_QUEUE_SIZE = 50;
 
 
-    /**
-     * INSTANCE VARIABLES
-     **/
-    private Comparator<Block> blockComparator;
-
-
     public AStarPathfinder() {
-        // Blocks get compared based on totalScore
-        blockComparator = Comparator.comparingDouble(Block::getTotalScore);
     }
     public AStarPathfinder(Pathfinder previous) {
-        blockComparator = Comparator.comparingDouble(Block::getTotalScore);
         setStart(previous.getStart());
         setEnd(previous.getEnd());
         setBlocksList(previous.getBlocks());
     }
 
-    public void setBlockComparator(Comparator<Block> blockComparator) {
-        this.blockComparator = blockComparator;
+    protected double getPriority(Block block) {
+        return block.getTotalScore();
+    }
+
+    private static final class QueueEntry {
+        private final Block block;
+        private final double priority;
+        private final long sequence;
+
+        private QueueEntry(Block block, double priority, long sequence) {
+            this.block = block;
+            this.priority = priority;
+            this.sequence = sequence;
+        }
     }
 
     @Override
     public List<Block> findRoute() {
-        PriorityQueue<Block> openQueue = new PriorityQueue<>(OPEN_QUEUE_SIZE, blockComparator);
-        List<Block> closedList = new ArrayList<>();
+        PriorityQueue<QueueEntry> openQueue = new PriorityQueue<>(
+                OPEN_QUEUE_SIZE,
+                Comparator.comparingDouble((QueueEntry entry) -> entry.priority)
+                        .thenComparingLong(entry -> entry.sequence)
+        );
+        Set<Block> openSet = new HashSet<>();
+        Set<Block> closedSet = new HashSet<>();
+        long sequence = 0L;
         getStart().setScoreFromStart(0);
-        openQueue.add(getStart());
+        openQueue.add(new QueueEntry(getStart(), getPriority(getStart()), sequence++));
+        openSet.add(getStart());
         Block currentBlock;
 
         while (!openQueue.isEmpty()) {
-            currentBlock = openQueue.poll();  //Get the head of the queue and remove it from the list
-            assert currentBlock != null;
+            QueueEntry entry = openQueue.poll();
+            currentBlock = entry.block;
+            if (closedSet.contains(currentBlock)) {
+                continue;
+            }
+            if (Double.compare(entry.priority, getPriority(currentBlock)) != 0) {
+                continue; // stale queue entry after a better path was enqueued later
+            }
+
+            openSet.remove(currentBlock);
             currentBlock.makeWalked();
             /* if current node is the destination, generate route and return it */
             if (currentBlock.equals(getEnd())) {
                 return reconstructPath(currentBlock);
             }
 
-            /* add currentBlock to the closedList and consider its neighbours */
-            closedList.add(currentBlock);
+            /* add currentBlock to the closed set and consider its neighbours */
+            closedSet.add(currentBlock);
             List<Block> neighbours = getNeighbours(currentBlock);
 
-            /* for every neighbour,  */
+            /* for every neighbour */
             for (Block neighbourBlock : neighbours) {
-                /* if the neighbour is already in open list or closed list through a shorter path, skip it */
                 double newDistFromParent = neighbourBlock.calcEuclidDistanceTo(currentBlock);
-                if (closedList.contains(neighbourBlock) &&
-                        neighbourBlock.getScoreFromStart() < currentBlock.getScoreFromStart() + newDistFromParent) {
+                double tentativeScore = currentBlock.getScoreFromStart() + newDistFromParent;
+                if (tentativeScore >= neighbourBlock.getScoreFromStart()) {
                     continue;
                 }
-                if (queueContains(openQueue, neighbourBlock) &&
-                        neighbourBlock.getScoreFromStart() < currentBlock.getScoreFromStart() + newDistFromParent) {
-                    continue;
-                }
+
+                boolean wasUndiscovered = !openSet.contains(neighbourBlock) && !closedSet.contains(neighbourBlock);
+                closedSet.remove(neighbourBlock); // allow reopen if a better path was found
 
                 /* init neighbour scores*/
                 neighbourBlock.setParentBlock(currentBlock);
@@ -72,20 +87,15 @@ public class AStarPathfinder extends Pathfinder {
                 neighbourBlock.calcScoreFromStart(currentBlock); // g(n)
                 neighbourBlock.calcTotalScoreAStar(); // h(n) + g(n)
 
-                // If block has not been visited before, add it to the open queue
-                if (!queueContains(openQueue, neighbourBlock) && !closedList.contains(neighbourBlock)) {
+                if (wasUndiscovered) {
                     neighbourBlock.makeNeighbour();
-                    openQueue.add(neighbourBlock);
                 }
+                openQueue.add(new QueueEntry(neighbourBlock, getPriority(neighbourBlock), sequence++));
+                openSet.add(neighbourBlock);
             }
 
         }
-        return List.of(getEnd());
-    }
-
-    public boolean queueContains(PriorityQueue<Block> queue, Block block) {
-        Stream<Block> blockStream = queue.stream();
-        return blockStream.anyMatch(x -> x.equals(block));
+        return List.of();
     }
 
 }

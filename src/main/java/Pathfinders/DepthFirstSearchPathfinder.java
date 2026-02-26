@@ -15,15 +15,15 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
      */
     public DepthFirstSearchPathfinder() {
         blockStack = new Stack<>();
-        visited = initializeVisited();
+        visited = new boolean[0][0];
     }
 
     public DepthFirstSearchPathfinder(Pathfinder previous) {
         blockStack = new Stack<>();
-        visited = initializeVisited();
         setBlocksList(previous.getBlocks());
         setStart(previous.getStart());
         setEnd(previous.getEnd());
+        visited = initializeVisited();
     }
 
     @Override
@@ -60,6 +60,6 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                 blockStack.add(neighbourBlock);
             }
         }
-        return List.of(getEnd());
+        return List.of();
     }
 }

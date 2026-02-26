@@ -134,8 +134,12 @@ public abstract class Pathfinder implements Runnable {
     }
 
     public boolean[][] initializeVisited() {
-        int width = (int) (App.BLOCK_NUMBER * Utils.getAspectRatio());
-        boolean[][] array = new boolean[App.BLOCK_NUMBER][width];
+        if (blocksList == null || blocksList.isEmpty()) {
+            throw new IllegalStateException("Blocks list must be initialized before creating visited array.");
+        }
+        int height = blocksList.size();
+        int width = blocksList.getFirst().size();
+        boolean[][] array = new boolean[height][width];
         Arrays.stream(array).forEach(x -> Arrays.fill(x, false));
         return array;
     }

@@ -91,31 +91,25 @@ public class App {
     public static void paintRoute(List<Block> blocks) {
         for (Block block : blocks) {
             block.makePath();
-
-            try {
-                Thread.sleep(App.paintDelay);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
         }
     }
 
     public static void main(String[] args) {
-
-        JFrame frame = new JFrame(FRAME_TITLE);
-        frame.setResizable(true);
-        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-        frame.setContentPane(new App().globalPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        long start = System.nanoTime();
-        frame.pack();
-        long end = System.nanoTime();
-        frame.setVisible(true);
-        long end2 = System.nanoTime();
-        System.out.println("pack(): " + (end - start) / 1000000f + "ms");
-        System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
-        System.out.println(Thread.currentThread());
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame(FRAME_TITLE);
+            frame.setResizable(true);
+            frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+            frame.setContentPane(new App().globalPanel);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            long start = System.nanoTime();
+            frame.pack();
+            long end = System.nanoTime();
+            frame.setVisible(true);
+            long end2 = System.nanoTime();
+            System.out.println("pack(): " + (end - start) / 1000000f + "ms");
+            System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
+            System.out.println(Thread.currentThread());
+        });
     }
 
     /*
@@ -368,6 +362,9 @@ public class App {
      */
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
+        Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
+        Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
+        centrePanel.resetKeyboardActions();
         List<List<Block>> blockGrid = createBlockGrid();
 
         centrePanel.setBlockList(blockGrid);
@@ -415,7 +412,12 @@ public class App {
 
                 System.out.println("Clicked block at row: " + row + ", column: " + col);
 
-                Block clickedBlock = pathfinder.getBlocks().get(row).get(col);
+                List<List<Block>> blocks = pathfinder.getBlocks();
+                if (row < 0 || row >= blocks.size() || col < 0 || col >= blocks.get(row).size()) {
+                    return;
+                }
+
+                Block clickedBlock = blocks.get(row).get(col);
                 clickCount++;
                 if (clickCount == 1) {
                     pathfinder.setStart(clickedBlock);
@@ -462,6 +464,9 @@ public class App {
 
     private void goToMapEditState() {
         instructionsLabel.setText("Draw obstacles and then click 'Run' or press 'r'  to run the selected Pathfinder.");
+        Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
+        Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
+        centrePanel.resetKeyboardActions();
         centrePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke('r'), "EnterAction");
         centrePanel.getActionMap().put("EnterAction", new AbstractAction() {
             @Override
@@ -499,11 +504,17 @@ public class App {
     }
 
     private void setBlockAsWall(MouseEvent e) {
+        if (state != State.EDIT_MAP) {
+            return;
+        }
         int col = e.getX() / 18;
         int row = e.getY() / 18;
         List<List<Block>> blocks = pathfinder.getBlocks();
         if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
             Block block = blocks.get(row).get(col);
+            if (block == pathfinder.getStart() || block == pathfinder.getEnd()) {
+                return;
+            }
             block.setWalkable(false);
             block.makeWall();
         }
@@ -517,6 +528,7 @@ public class App {
         instructionsLabel.setText("Pathfinder is running");
         centrePanel.resetKeyboardActions();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
+        Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         selectPathfinder();
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
@@ -571,6 +583,9 @@ public class App {
      * Resets the application to its initial state, clearing the grid and reinitializing the pathfinder.
      */
     public void resetApp() {
+        Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
+        Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
+        centrePanel.resetKeyboardActions();
         this.centrePanel.removeAll();
         initPathfinder();
         state = State.PRE_START;

@@ -54,6 +54,6 @@ public class BreadthFirstSearchPathfinder extends Pathfinder {
 
             }
         }
-        return List.of(getEnd());
+        return List.of();
     }
 }
