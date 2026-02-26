@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class App {
     private static final int DEFAULT_GRID_ROWS = 80;
@@ -23,14 +24,25 @@ public class App {
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
     public static final String RANDOMISED_PRIMS = "Randomised Prim's";
     public static final String RANDOMIZED_DFS = "Randomised DFS";
-    public static final Color BACKGROUND = new Color(0, 0, 0);
-    public static final Color BLOCK_COLOR = new Color(139, 139, 144);
-    public static final Color BLOCK_BORDER_COLOR = new Color(40, 40, 40);
+    public static final Color DEFAULT_BACKGROUND = new Color(0, 0, 0);
+    public static final Color DEFAULT_BLOCK_COLOR = new Color(139, 139, 144);
+    public static final Color DEFAULT_BLOCK_BORDER_COLOR = new Color(40, 40, 40);
     public static final Color TEXT_COLOR = new Color(211, 211, 211);
-    public static final Color PRESSED_COLOR = new Color(139, 0, 0);
-    public static final Color OBSTACLE_COLOR = new Color(40, 40, 40);
-    public static final Color PATH_COLOR = new Color(229, 61, 61);
-    public static final Color ACCENT_COLOR = new Color(2, 76, 71);
+    public static final Color DEFAULT_PRESSED_COLOR = new Color(139, 0, 0);
+    public static final Color DEFAULT_OBSTACLE_COLOR = new Color(40, 40, 40);
+    public static final Color DEFAULT_PATH_COLOR = new Color(229, 61, 61);
+    public static final Color DEFAULT_ACCENT_COLOR = new Color(2, 76, 71);
+    public static final Color DEFAULT_NEIGHBOUR_COLOR = new Color(255, 165, 0);
+    public static final Color DEFAULT_VISITED_COLOR = new Color(2, 76, 71);
+    public static Color BACKGROUND = DEFAULT_BACKGROUND;
+    public static Color BLOCK_COLOR = DEFAULT_BLOCK_COLOR;
+    public static Color BLOCK_BORDER_COLOR = DEFAULT_BLOCK_BORDER_COLOR;
+    public static Color PRESSED_COLOR = DEFAULT_PRESSED_COLOR;
+    public static Color OBSTACLE_COLOR = DEFAULT_OBSTACLE_COLOR;
+    public static Color PATH_COLOR = DEFAULT_PATH_COLOR;
+    public static Color ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
+    public static Color NEIGHBOUR_COLOR = DEFAULT_NEIGHBOUR_COLOR;
+    public static Color VISITED_COLOR = DEFAULT_VISITED_COLOR;
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
     public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
     /**
@@ -61,6 +73,7 @@ public class App {
     private JCheckBox fadeCheckBox;
     private JSpinner cellSizeSpinner;
     private JButton applyGridButton;
+    private JComboBox<String> paletteComboBox;
     private JSlider delaySlider;
     private JLabel sliderLabel;
     private JLabel sliderValueLabel;
@@ -74,6 +87,112 @@ public class App {
     private State state;
     private boolean isDrawingWall = false;
     private GridConfig gridConfig;
+
+    private static final class MazePalette {
+        private final String name;
+        private final Color background;
+        private final Color blockColor;
+        private final Color blockBorderColor;
+        private final Color startEndColor;
+        private final Color obstacleColor;
+        private final Color pathColor;
+        private final Color accentColor;
+        private final Color neighbourColor;
+        private final Color visitedColor;
+
+        private MazePalette(
+                String name,
+                Color background,
+                Color blockColor,
+                Color blockBorderColor,
+                Color startEndColor,
+                Color obstacleColor,
+                Color pathColor,
+                Color accentColor,
+                Color neighbourColor,
+                Color visitedColor
+        ) {
+            this.name = name;
+            this.background = background;
+            this.blockColor = blockColor;
+            this.blockBorderColor = blockBorderColor;
+            this.startEndColor = startEndColor;
+            this.obstacleColor = obstacleColor;
+            this.pathColor = pathColor;
+            this.accentColor = accentColor;
+            this.neighbourColor = neighbourColor;
+            this.visitedColor = visitedColor;
+        }
+    }
+
+    private static final MazePalette[] MAZE_PALETTES = {
+            new MazePalette(
+                    "Original",
+                    new Color(0, 0, 0),
+                    new Color(139, 139, 144),
+                    new Color(40, 40, 40),
+                    new Color(139, 0, 0),
+                    new Color(40, 40, 40),
+                    new Color(229, 61, 61),
+                    new Color(2, 76, 71),
+                    new Color(255, 165, 0),
+                    new Color(2, 76, 71)
+            ),
+            new MazePalette(
+                    "Palette A",
+                    DEFAULT_BACKGROUND,
+                    new Color(237, 242, 244), // lightest (#edf2f4) -> unvisited
+                    DEFAULT_BLOCK_BORDER_COLOR,
+                    DEFAULT_PRESSED_COLOR,
+                    new Color(43, 45, 66),    // darkest (#2b2d42) -> obstacles
+                    DEFAULT_PATH_COLOR,
+                    DEFAULT_ACCENT_COLOR,
+                    new Color(239, 35, 60),   // #ef233c -> neighbour
+                    new Color(141, 153, 174)  // #8d99ae -> visited
+            ),
+            new MazePalette(
+                    "Palette B",
+                    DEFAULT_BACKGROUND,
+                    new Color(239, 214, 172), // lightest (#efd6ac)
+                    DEFAULT_BLOCK_BORDER_COLOR,
+                    DEFAULT_PRESSED_COLOR,
+                    new Color(4, 21, 31),     // darkest (#04151f)
+                    DEFAULT_PATH_COLOR,
+                    DEFAULT_ACCENT_COLOR,
+                    new Color(196, 73, 0),    // #c44900
+                    new Color(24, 58, 55)     // #183a37
+            ),
+            new MazePalette(
+                    "Palette C",
+                    DEFAULT_BACKGROUND,
+                    new Color(245, 245, 245), // lightest (#f5f5f5)
+                    DEFAULT_BLOCK_BORDER_COLOR,
+                    DEFAULT_PRESSED_COLOR,
+                    new Color(60, 60, 60),    // darkest (#3c3c3c)
+                    DEFAULT_PATH_COLOR,
+                    DEFAULT_ACCENT_COLOR,
+                    new Color(255, 90, 95),   // #ff5a5f
+                    new Color(8, 126, 139)    // #087e8b
+            ),
+            new MazePalette(
+                    "Palette D",
+                    DEFAULT_BACKGROUND,
+                    new Color(254, 250, 224), // lightest (#fefae0)
+                    DEFAULT_BLOCK_BORDER_COLOR,
+                    DEFAULT_PRESSED_COLOR,
+                    new Color(40, 54, 24),    // darkest (#283618)
+                    DEFAULT_PATH_COLOR,
+                    DEFAULT_ACCENT_COLOR,
+                    new Color(221, 161, 94),  // #dda15e
+                    new Color(96, 108, 56)    // #606c38
+            )
+    };
+    private static final Set<String> TRAVERSAL_ONLY_PALETTES = Set.of(
+            "Palette A",
+            "Palette B",
+            "Palette C",
+            "Palette D"
+    );
 
     private static final class GridConfig {
         private final int rows;
@@ -172,11 +291,21 @@ public class App {
         // BOTTOM PANEL -----------------------------------------------------
 
         bottomPanel = new JPanel();
-        bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+        bottomPanel.setLayout(new BorderLayout(0, 8));
         bottomPanel.setAlignmentX(1f);
         bottomPanel.setBorder(TOP_BORDER);
         bottomPanel.setBackground(PANEL_COLOUR);
         globalPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        JPanel bottomInfoRow = new JPanel();
+        bottomInfoRow.setLayout(new BoxLayout(bottomInfoRow, BoxLayout.X_AXIS));
+        bottomInfoRow.setBackground(PANEL_COLOUR);
+        bottomInfoRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel bottomControlsRow = new JPanel();
+        bottomControlsRow.setLayout(new BoxLayout(bottomControlsRow, BoxLayout.X_AXIS));
+        bottomControlsRow.setBackground(PANEL_COLOUR);
+        bottomControlsRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         instructionsLabel = new JLabel();
         instructionsLabel.setText("Select starting and ending block...");
@@ -184,16 +313,16 @@ public class App {
         instructionsLabel.setBackground(PANEL_COLOUR);
         instructionsLabel.setForeground(TEXT_COLOR);
         instructionsLabel.setFont(GLOBAL_FONT);
-        bottomPanel.add(instructionsLabel);
+        bottomInfoRow.add(instructionsLabel);
 
-        bottomPanel.add(Box.createHorizontalGlue());
+        bottomInfoRow.add(Box.createHorizontalGlue());
 
         sliderLabel = new JLabel("Delay (ms):");
         sliderLabel.setFont(GLOBAL_FONT);
         sliderLabel.setBackground(PANEL_COLOUR);
         sliderLabel.setForeground(TEXT_COLOR);
-        bottomPanel.add(sliderLabel);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(sliderLabel);
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         sliderValueLabel = new JLabel();
         sliderValueLabel.setFont(GLOBAL_FONT);
@@ -202,7 +331,7 @@ public class App {
         sliderValueLabel.setPreferredSize(new Dimension(70, 40));
         sliderValueLabel.setMinimumSize(new Dimension(70, 40));
 
-        bottomPanel.add(sliderValueLabel);
+        bottomControlsRow.add(sliderValueLabel);
 
         //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
@@ -219,8 +348,8 @@ public class App {
             sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
         });
         sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
-        bottomPanel.add(delaySlider);
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(delaySlider);
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         allowDiagonalCheckBox = new JCheckBox();
         allowDiagonalCheckBox.setAlignmentX(0f);
@@ -233,9 +362,9 @@ public class App {
         allowDiagonalCheckBox.setBorder(new JButton().getBorder());
         allowDiagonalCheckBox.setBorderPainted(true);
         allowDiagonalCheckBox.addActionListener(x -> allowDiagonal = allowDiagonalCheckBox.isSelected());
-        bottomPanel.add(allowDiagonalCheckBox);
+        bottomControlsRow.add(allowDiagonalCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         fadeCheckBox = new JCheckBox();
         fadeCheckBox.setAlignmentX(0f);
@@ -248,20 +377,35 @@ public class App {
         fadeCheckBox.setBorder(new JButton().getBorder());
         fadeCheckBox.setBorderPainted(true);
         fadeCheckBox.addActionListener(x -> isFadeChecked = fadeCheckBox.isSelected());
-        bottomPanel.add(fadeCheckBox);
+        bottomControlsRow.add(fadeCheckBox);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
+
+        JLabel paletteLabel = new JLabel("Palette:");
+        paletteLabel.setFont(GLOBAL_FONT);
+        paletteLabel.setForeground(TEXT_COLOR);
+        bottomControlsRow.add(paletteLabel);
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(6, 0)));
+
+        String[] paletteNames = Arrays.stream(MAZE_PALETTES).map(p -> p.name).toArray(String[]::new);
+        paletteComboBox = new JComboBox<>(paletteNames);
+        paletteComboBox.setMaximumSize(new Dimension(150, 35));
+        paletteComboBox.setFont(new Font("Times New Roman", Font.PLAIN, 16));
+        paletteComboBox.addActionListener(_ -> applySelectedMazePalette());
+        bottomControlsRow.add(paletteComboBox);
+
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         JLabel cellSizeLabel = new JLabel("Cell Size:");
         cellSizeLabel.setFont(GLOBAL_FONT);
         cellSizeLabel.setForeground(TEXT_COLOR);
-        bottomPanel.add(cellSizeLabel);
-        bottomPanel.add(Box.createRigidArea(new Dimension(4, 0)));
+        bottomControlsRow.add(cellSizeLabel);
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(4, 0)));
 
         cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 4, 40, 1));
         cellSizeSpinner.setMaximumSize(new Dimension(60, 35));
-        bottomPanel.add(cellSizeSpinner);
-        bottomPanel.add(Box.createRigidArea(new Dimension(8, 0)));
+        bottomControlsRow.add(cellSizeSpinner);
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(8, 0)));
 
         applyGridButton = new JButton("Apply Grid");
         applyGridButton.setBackground(ACCENT_COLOR);
@@ -269,9 +413,9 @@ public class App {
         applyGridButton.setFocusPainted(false);
         applyGridButton.setFont(GLOBAL_FONT);
         applyGridButton.addActionListener(_ -> applyGridSettings());
-        bottomPanel.add(applyGridButton);
+        bottomControlsRow.add(applyGridButton);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         resetButton = new JButton();
         resetButton.setText("Reset");
@@ -282,9 +426,9 @@ public class App {
         resetButton.setFont(GLOBAL_FONT);
         allowDiagonalCheckBox.setBorder(resetButton.getBorder());
 
-        bottomPanel.add(resetButton);
+        bottomControlsRow.add(resetButton);
 
-        bottomPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         runButton = new JButton();
         runButton.setText("Run");
@@ -293,7 +437,11 @@ public class App {
         runButton.setFocusPainted(false);
         runButton.addActionListener(_ -> runButtonClicked());
         runButton.setFont(GLOBAL_FONT);
-        bottomPanel.add(runButton);
+        bottomControlsRow.add(runButton);
+
+        bottomControlsRow.add(Box.createHorizontalGlue());
+        bottomPanel.add(bottomInfoRow, BorderLayout.NORTH);
+        bottomPanel.add(bottomControlsRow, BorderLayout.SOUTH);
 
 
         // CENTRE PANEL -----------------------------------------------------
@@ -681,6 +829,42 @@ public class App {
         }
         gridConfig = newGridConfig;
         resetApp();
+    }
+
+    private void applySelectedMazePalette() {
+        if (paletteComboBox == null) {
+            return;
+        }
+        int selectedIndex = paletteComboBox.getSelectedIndex();
+        if (selectedIndex < 0 || selectedIndex >= MAZE_PALETTES.length) {
+            return;
+        }
+        MazePalette palette = MAZE_PALETTES[selectedIndex];
+        if (TRAVERSAL_ONLY_PALETTES.contains(palette.name)) {
+            BACKGROUND = DEFAULT_BACKGROUND;
+            BLOCK_COLOR = palette.blockColor;
+            BLOCK_BORDER_COLOR = DEFAULT_BLOCK_BORDER_COLOR;
+            PRESSED_COLOR = DEFAULT_PRESSED_COLOR;
+            OBSTACLE_COLOR = palette.obstacleColor;
+            PATH_COLOR = DEFAULT_PATH_COLOR;
+            ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
+            NEIGHBOUR_COLOR = palette.neighbourColor;
+            VISITED_COLOR = palette.visitedColor;
+        } else {
+            BACKGROUND = palette.background;
+            BLOCK_COLOR = palette.blockColor;
+            BLOCK_BORDER_COLOR = palette.blockBorderColor;
+            PRESSED_COLOR = DEFAULT_PRESSED_COLOR;
+            OBSTACLE_COLOR = palette.obstacleColor;
+            PATH_COLOR = palette.pathColor;
+            ACCENT_COLOR = palette.accentColor;
+            NEIGHBOUR_COLOR = palette.neighbourColor;
+            VISITED_COLOR = palette.visitedColor;
+        }
+        if (centrePanel != null) {
+            centrePanel.setBackground(BACKGROUND);
+            centrePanel.repaint();
+        }
     }
 
     private GridConfig createGridConfigForPane(int cellSize) {

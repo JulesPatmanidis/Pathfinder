@@ -53,17 +53,17 @@ public class GridPanel extends JPanel {
                         case WALKED -> {
                             if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
-                                g.setColor(Utils.fadeColor(Color.ORANGE, App.ACCENT_COLOR, fadeRatio));
+                                g.setColor(Utils.fadeColor(App.NEIGHBOUR_COLOR, App.VISITED_COLOR, fadeRatio));
                             } else {
-                                g.setColor(App.ACCENT_COLOR);
+                                g.setColor(App.VISITED_COLOR);
                             }
                         }
                         case NEIGHBOUR -> {
                             if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
-                                g.setColor(Utils.fadeColor(App.BLOCK_COLOR, Color.ORANGE, fadeRatio));
+                                g.setColor(Utils.fadeColor(App.BLOCK_COLOR, App.NEIGHBOUR_COLOR, fadeRatio));
                             } else {
-                                g.setColor(Color.ORANGE);
+                                g.setColor(App.NEIGHBOUR_COLOR);
                             }
                         }
                         case WALKABLE -> g.setColor(App.BLOCK_COLOR);
@@ -71,7 +71,7 @@ public class GridPanel extends JPanel {
                         case PATH -> {
                             if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
-                                g.setColor(Utils.fadeColor(App.ACCENT_COLOR, App.PATH_COLOR, fadeRatio));
+                                g.setColor(Utils.fadeColor(App.VISITED_COLOR, App.PATH_COLOR, fadeRatio));
                             } else {
                                 g.setColor(App.PATH_COLOR);
                             }
