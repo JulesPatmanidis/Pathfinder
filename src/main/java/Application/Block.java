@@ -14,7 +14,7 @@ public class Block implements Comparable<Block> {
     private double distanceScore;
     private double scoreFromStart = Double.MAX_VALUE;
 
-    private BlockState state;
+    private volatile BlockState state;
 
     public Block(int row, int column, int cellSize) {
         walkable = true;

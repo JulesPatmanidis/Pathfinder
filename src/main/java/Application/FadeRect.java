@@ -5,11 +5,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class FadeRect extends Rectangle {
 
-    private static final float INCREMENT = 0.05f;
+    private static final long ANIMATION_DURATION_NANOS = 320_000_000L;
     private static final java.util.List<FadeRect> animatingRects = new CopyOnWriteArrayList<>();
 
-    private boolean inAnimation = false;
-    private double fadeRatio = 0.0;
+    private volatile boolean inAnimation = false;
+    private volatile double fadeRatio = 0.0;
+    private volatile long animationStartNanos = 0L;
 
 
     public FadeRect(int row, int column, int width, int height) {
@@ -32,21 +33,26 @@ public class FadeRect extends Rectangle {
         return fadeRatio;
     }
 
-    public void incrementFadeRatio() {
-        fadeRatio += INCREMENT;
+    public synchronized void incrementFadeRatio() {
+        if (!inAnimation) {
+            animatingRects.remove(this);
+            return;
+        }
+        long elapsedNanos = Math.max(0L, System.nanoTime() - animationStartNanos);
+        fadeRatio = Math.min(1.0, elapsedNanos / (double) ANIMATION_DURATION_NANOS);
         if (fadeRatio >= 1.0) {
             fadeRatio = 1.0;
             inAnimation = false;
-            synchronized (animatingRects) {
-                animatingRects.remove(this);
-            }
+            animatingRects.remove(this);
         }
     }
 
-    public void startAnimation() {
-        if (inAnimation) return;
-        inAnimation = true;
+    public synchronized void startAnimation() {
+        animationStartNanos = System.nanoTime();
         fadeRatio = 0.0;
-        animatingRects.add(this);
+        inAnimation = true;
+        if (!animatingRects.contains(this)) {
+            animatingRects.add(this);
+        }
     }
 }
