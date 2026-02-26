@@ -1,23 +1,21 @@
-.gradle
-out/
-.idea/workspace.xml
+# Java / Gradle build outputs
+.gradle/
+build/
 **/build/
 !**/src/**/build/
+out/
+*.class
 
-# Ignore Gradle GUI config
-gradle-app.setting
+# IntelliJ IDEA
+.idea/
+*.iml
 
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
-
-# Avoid ignore Gradle wrappper properties
-!gradle-wrapper.properties
-
-# Cache of project
-.gradletasknamecache
-
-# Eclipse Gradle plugin generated files
-# Eclipse Core
+# Eclipse
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.settings/
+
+# Logs / OS files
+*.log
+.DS_Store
+Thumbs.db
