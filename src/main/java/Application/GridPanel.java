@@ -8,13 +8,14 @@ import java.util.List;
 
 public class GridPanel extends JPanel {
 
-    private final Timer repaintTimer = new Timer(15, _ -> {
+    private final Timer repaintTimer = new Timer(16, _ -> {
         // Update fade ratios for animating rectangles
         for (FadeRect rect : FadeRect.getAnimatingRects()) {
             rect.incrementFadeRatio();
         }
         repaint();
     });
+
     private List<List<Block>> blockList;
 
     {
@@ -40,7 +41,7 @@ public class GridPanel extends JPanel {
                     switch (block.getState()) {
                         case START_END -> g.setColor(App.PRESSED_COLOR);
                         case WALKED -> {
-                            if (block.getRect().isInAnimation()) {
+                            if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
                                 g.setColor(Utils.fadeColor(Color.ORANGE, App.ACCENT_COLOR, fadeRatio));
                             } else {
@@ -48,7 +49,7 @@ public class GridPanel extends JPanel {
                             }
                         }
                         case NEIGHBOUR -> {
-                            if (block.getRect().isInAnimation()) {
+                            if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
                                 g.setColor(Utils.fadeColor(App.BLOCK_COLOR, Color.ORANGE, fadeRatio));
                             } else {
@@ -58,7 +59,7 @@ public class GridPanel extends JPanel {
                         case WALKABLE -> g.setColor(App.BLOCK_COLOR);
                         case NON_WALKABLE -> g.setColor(App.OBSTACLE_COLOR);
                         case PATH -> {
-                            if (block.getRect().isInAnimation()) {
+                            if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
                                 g.setColor(Utils.fadeColor(App.ACCENT_COLOR, App.PATH_COLOR, fadeRatio));
                             } else {
