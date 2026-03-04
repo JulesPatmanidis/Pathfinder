@@ -71,7 +71,7 @@ public class GridPanel extends JPanel {
                         case PATH -> {
                             if (block.getRect().isInAnimation() && App.isFadeChecked) {
                                 double fadeRatio = block.getRect().getFadeRatio();
-                                g.setColor(Utils.fadeColor(App.VISITED_COLOR, App.PATH_COLOR, fadeRatio));
+                                g.setColor(Utils.fadeColor(App.NEIGHBOUR_COLOR, App.PATH_COLOR, fadeRatio));
                             } else {
                                 g.setColor(App.PATH_COLOR);
                             }
