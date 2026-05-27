@@ -2,13 +2,12 @@ package Pathfinders;
 
 import java.util.*;
 import java.util.List;
-import Application.Block;
+import Model.Block;
 
 
 public class AStarPathfinder extends Pathfinder {
 
     private static final int OPEN_QUEUE_SIZE = 50;
-
 
     public AStarPathfinder() {
     }
@@ -60,7 +59,8 @@ public class AStarPathfinder extends Pathfinder {
             }
 
             openSet.remove(currentBlock);
-            currentBlock.makeWalked();
+            markWalked(currentBlock);
+
             /* if current node is the destination, generate route and return it */
             if (currentBlock.equals(getEnd())) {
                 return reconstructPath(currentBlock);
@@ -88,7 +88,7 @@ public class AStarPathfinder extends Pathfinder {
                 neighbourBlock.calcTotalScoreAStar(); // h(n) + g(n)
 
                 if (wasUndiscovered) {
-                    neighbourBlock.makeNeighbour();
+                    markNeighbour(neighbourBlock);
                 }
                 openQueue.add(new QueueEntry(neighbourBlock, getPriority(neighbourBlock), sequence++));
                 openSet.add(neighbourBlock);

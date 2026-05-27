@@ -1,11 +1,7 @@
-package Application;
-
-import Utilities.Utils;
+package Model;
 
 public class Block implements Comparable<Block> {
 
-    //private final mapButton button;
-    private final FadeRect rect;
     private final int row;
     private final int column;
     private transient Block parentBlock;
@@ -16,11 +12,10 @@ public class Block implements Comparable<Block> {
 
     private volatile BlockState state;
 
-    public Block(int row, int column, int cellSize) {
+    public Block(int row, int column) {
         walkable = true;
         this.row = row;
         this.column = column;
-        rect = new FadeRect(row, column, cellSize, cellSize);
         state = BlockState.WALKABLE;
     }
 
@@ -68,10 +63,6 @@ public class Block implements Comparable<Block> {
         return state;
     }
 
-    public FadeRect getRect() {
-        return rect;
-    }
-
     public void calcScoreFromStart(Block parent) {
         if (parent == null) {
             scoreFromStart = 0;
@@ -106,16 +97,12 @@ public class Block implements Comparable<Block> {
     }
 
     public void makeWalked() {
-        Utils.addDelay(App.paintDelay);
         this.state = BlockState.WALKED;
-        this.rect.startAnimation();
         this.setWalkable(true);
     }
 
     public void makeNeighbour() {
-        Utils.addDelay(App.paintDelay);
         this.state = BlockState.NEIGHBOUR;
-        this.rect.startAnimation();
     }
 
     public void makeStartEnd() {
@@ -124,9 +111,7 @@ public class Block implements Comparable<Block> {
     }
 
     public void makePath() {
-        Utils.addDelay(App.paintDelay);
         this.state = BlockState.PATH;
-        this.rect.startAnimation();
     }
 
 

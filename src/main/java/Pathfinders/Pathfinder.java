@@ -1,7 +1,7 @@
 package Pathfinders;
 
-import Application.App;
-import Application.Block;
+import Model.Block;
+import Model.GridChangeListener;
 import Utilities.Utils;
 
 import java.util.*;
@@ -52,7 +52,8 @@ public abstract class Pathfinder implements Runnable {
     private Block end;
     private List<List<Block>> blocksList;
     private boolean moveDiagonally;
-
+    private GridChangeListener listener = block -> {};
+    private int delayMillis;
 
     /**
      * Method containing the main algorithm of each pathfinder
@@ -154,6 +155,33 @@ public abstract class Pathfinder implements Runnable {
         System.out.println(Thread.currentThread());
     }
 
+    public void setGridChangeListener(GridChangeListener listener) {
+        this.listener = listener;
+    }
+
+    public void setDelayMillis(int delayMillis) {
+        this.delayMillis = delayMillis;
+    }
+
+    protected void markWalked(Block block) {
+        Utils.addDelay(delayMillis);
+        block.makeWalked();
+        listener.blockChanged(block);
+    }
+
+    protected void markNeighbour(Block block) {
+        Utils.addDelay(delayMillis);
+        block.makeNeighbour();
+        listener.blockChanged(block);
+    }
+
+    protected void markPath(Block block) {
+        Utils.addDelay(delayMillis);
+        block.makePath();
+        listener.blockChanged(block);
+    }
+
+
     // MAZE Generation ---------------------------------------------------------------------------------------------
 
     public HashMap<Block, Block> getMazeNeighbours(Block parentBlock) {
@@ -231,7 +259,7 @@ public abstract class Pathfinder implements Runnable {
         int randCol = new Random().nextInt(blocksList.getFirst().size());
         Block first = blocksList.get(randRow).get(randCol);
 
-        first.makeWalked();
+        markWalked(first);
         HashMap<Block, Block> frontierMap = (HashMap<Block, Block>) getMazeNeighbours(first).entrySet().stream()
                 .filter(map -> !map.getKey().isWalkable())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -263,6 +291,9 @@ public abstract class Pathfinder implements Runnable {
 
     @Override
     public void run() {
-        App.paintRoute(findRoute());
+        List<Block> route = findRoute();
+        for (Block block : route) {
+            markPath(block);
+        }
     }
 }

@@ -1,5 +1,7 @@
 package Application;
 
+import Model.Block;
+import Model.Grid;
 import Pathfinders.*;
 import Utilities.Utils;
 
@@ -62,7 +64,7 @@ public class App {
     private JPanel globalPanel;
     private JPanel bottomPanel;
     private JPanel leftPanel;
-    private GridPanel centrePanel;
+    private GridView centrePanel;
     private JLabel fpsLabel;
     private Timer fpsLabelTimer;
     private JButton resetButton;
@@ -231,16 +233,6 @@ public class App {
         System.out.println("initPathfinder(): " + Math.floor(duration / 1000000f));
     }
 
-    /**
-     * Paints the route on the blocks provided with a delay between each block.
-     *
-     * @param blocks List of blocks representing the route to be painted.
-     */
-    public static void paintRoute(List<Block> blocks) {
-        for (Block block : blocks) {
-            block.makePath();
-        }
-    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -345,8 +337,14 @@ public class App {
 
         delaySlider.addChangeListener(changeEvent -> {
             paintDelay = delaySlider.getValue();
+
+            if (pathfinder != null) {
+                pathfinder.setDelayMillis(delaySlider.getValue());
+            }
+
             sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
         });
+
         sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
         bottomControlsRow.add(delaySlider);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -445,7 +443,7 @@ public class App {
 
 
         // CENTRE PANEL -----------------------------------------------------
-        centrePanel = new GridPanel();//JPanel();
+        centrePanel = new GridView();//JPanel();
         applyGridLayout();
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
@@ -571,10 +569,11 @@ public class App {
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
-        List<List<Block>> blockGrid = createBlockGrid();
+        List<List<Block>> blockList = createBlockGrid();
+        Grid grid = new Grid(blockList);
 
-        centrePanel.setBlockList(blockGrid);
-        pathfinder.setBlocksList(blockGrid);
+        centrePanel.setGrid(grid, gridConfig.cellSize);
+        pathfinder.setBlocksList(blockList);
 
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
@@ -586,6 +585,9 @@ public class App {
                 selectMaze();
             }
         });
+
+        configurePathfinderCallbacks();
+
     }
 
 
@@ -601,7 +603,7 @@ public class App {
         for (int i = 0; i < gridConfig.rows; i++) {
             tempList.add(i, new ArrayList<>());
             for (int j = 0; j < gridConfig.cols; j++) {
-                Block current = new Block(i, j, gridConfig.cellSize);
+                Block current = new Block(i, j);
                 tempList.get(i).add(j, current);
             }
         }
@@ -609,12 +611,11 @@ public class App {
         centrePanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                System.out.println("centrePanel clicked at: " + e.getPoint());
-                // Add your logic here
+                // System.out.println("centrePanel clicked at: " + e.getPoint());
                 int col = e.getX() / gridConfig.cellSize;
                 int row = e.getY() / gridConfig.cellSize;
 
-                System.out.println("Clicked block at row: " + row + ", column: " + col);
+                // System.out.println("Clicked block at row: " + row + ", column: " + col);
 
                 List<List<Block>> blocks = pathfinder.getBlocks();
                 if (row < 0 || row >= blocks.size() || col < 0 || col >= blocks.get(row).size()) {
@@ -734,6 +735,8 @@ public class App {
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         selectPathfinder();
+        configurePathfinderCallbacks();
+        pathfinder.setDelayMillis(paintDelay);
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
         Thread algorithmThread = new Thread(pathfinder);
@@ -765,6 +768,15 @@ public class App {
             default:
                 break;
         }
+    }
+
+    private void configurePathfinderCallbacks() {
+        pathfinder.setDelayMillis(paintDelay);
+
+        pathfinder.setGridChangeListener(block -> {
+            centrePanel.startAnimation(block);
+            SwingUtilities.invokeLater(centrePanel::repaint);
+        });
     }
 
     private void selectMaze() {

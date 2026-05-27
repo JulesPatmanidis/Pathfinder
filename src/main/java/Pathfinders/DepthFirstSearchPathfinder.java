@@ -1,10 +1,9 @@
 package Pathfinders;
 
-import javax.swing.*;
 import java.util.List;
 import java.util.Stack;
 
-import Application.Block;
+import Model.Block;
 
 public class DepthFirstSearchPathfinder extends Pathfinder {
 
@@ -37,6 +36,7 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
         Block currentBlock;
         while (!blockStack.isEmpty()) {
             currentBlock = blockStack.pop();
+            markWalked(currentBlock);
 
             if (currentBlock.equals(getEnd())) {
                 return reconstructPath(currentBlock);
@@ -51,8 +51,7 @@ public class DepthFirstSearchPathfinder extends Pathfinder {
                     continue;
                 }
 
-                //neighbourBlock.getButton().paintNeighbour();
-                neighbourBlock.makeNeighbour();
+                markNeighbour(neighbourBlock);
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 neighbourBlock.calcScoreFromStart(currentBlock);

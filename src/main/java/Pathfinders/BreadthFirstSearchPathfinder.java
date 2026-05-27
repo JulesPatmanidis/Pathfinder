@@ -1,10 +1,9 @@
 package Pathfinders;
 
-import javax.swing.*;
 import java.util.LinkedList;
 import java.util.List;
 
-import Application.Block;
+import Model.Block;
 
 public class BreadthFirstSearchPathfinder extends Pathfinder {
 
@@ -34,20 +33,18 @@ public class BreadthFirstSearchPathfinder extends Pathfinder {
         Block currentBlock;
         while (!blockQueue.isEmpty()) {
             currentBlock = blockQueue.poll();
+            markWalked(currentBlock);
 
             if (currentBlock.equals(getEnd())) {
                 return reconstructPath(currentBlock);
             }
 
             for (Block neighbourBlock : getNeighbours(currentBlock)) {
-                //Node neighbourNode = neighbourBlock.getNode();
-
                 if (visited[neighbourBlock.getRow()][neighbourBlock.getColumn()]) {
                     continue;
                 }
 
-                //neighbourBlock.getButton().paintNeighbour();
-                neighbourBlock.makeNeighbour();
+                markNeighbour(neighbourBlock);
                 visited[neighbourBlock.getRow()][neighbourBlock.getColumn()] = true;
                 neighbourBlock.setParentBlock(currentBlock);
                 blockQueue.add(neighbourBlock);

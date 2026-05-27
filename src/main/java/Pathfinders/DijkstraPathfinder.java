@@ -1,6 +1,6 @@
 package Pathfinders;
 
-import Application.Block;
+import Model.Block;
 
 public class DijkstraPathfinder extends AStarPathfinder {
 
