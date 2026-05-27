@@ -565,7 +565,7 @@ public class App {
      */
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
-        applyGridLayout();
+        //applyGridLayout();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
@@ -627,10 +627,12 @@ public class App {
                 if (clickCount == 1) {
                     pathfinder.setStart(clickedBlock);
                     clickedBlock.makeStartEnd();
+                    centrePanel.repaintBlock(clickedBlock);
                 }
                 if (clickCount == 2) {
                     pathfinder.setEnd(clickedBlock);
                     clickedBlock.makeStartEnd();
+                    centrePanel.repaintBlock(clickedBlock);
                     updateState();
                 }
             }
@@ -722,6 +724,7 @@ public class App {
             }
             block.setWalkable(false);
             block.makeWall();
+            centrePanel.repaintBlock(block);
         }
     }
 
@@ -773,9 +776,11 @@ public class App {
     private void configurePathfinderCallbacks() {
         pathfinder.setDelayMillis(paintDelay);
 
-        pathfinder.setGridChangeListener(block -> {
-            centrePanel.startAnimation(block);
-            SwingUtilities.invokeLater(centrePanel::repaint);
+        pathfinder.setGridChangeListener((block, animate) -> {
+            if (animate) {
+                centrePanel.startAnimation(block);
+            }
+            SwingUtilities.invokeLater(() -> centrePanel.repaintBlock(block));
         });
     }
 

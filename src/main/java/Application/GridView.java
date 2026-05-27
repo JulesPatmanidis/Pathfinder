@@ -9,17 +9,19 @@ import java.util.List;
 public class GridView extends JPanel {
 
     private final Timer repaintTimer = new Timer(16, e -> {
+        updateFpsCounter();
         // Update fade ratios for animating rectangles
         for (FadeRect rect : FadeRect.getAnimatingRects()) {
             rect.incrementFadeRatio();
+            repaint(rect.x, rect.y, rect.width + 1, rect.height + 1);
         }
-        repaint();
+
     });
 
     private Grid grid;
     private List<List<FadeRect>> fadeRects;
     private long fpsWindowStartNanos = System.nanoTime();
-    private int framesInWindow = 0;
+    private int timerTicksInWindow = 0;
     private int currentFps = 0;
 
     public GridView() {
@@ -60,6 +62,14 @@ public class GridView extends JPanel {
                 .startAnimation(getTargetColor(block));
     }
 
+    public void repaintBlock(Block block) {
+        FadeRect fadeRect = fadeRects
+                .get(block.getRow())
+                .get(block.getColumn());
+
+        repaint(fadeRect.x, fadeRect.y, fadeRect.width + 1, fadeRect.height + 1);
+    }
+
     public int getCurrentFps() {
         return currentFps;
     }
@@ -67,7 +77,6 @@ public class GridView extends JPanel {
     @Override
     protected void paintComponent(java.awt.Graphics g) {
         super.paintComponent(g);
-        updateFpsCounter();
 
         // Draw the insides of the blocks
         if (grid != null) {
@@ -123,12 +132,12 @@ public class GridView extends JPanel {
     }
 
     private void updateFpsCounter() {
-        framesInWindow++;
+        timerTicksInWindow++;
         long now = System.nanoTime();
         long elapsed = now - fpsWindowStartNanos;
         if (elapsed >= 1_000_000_000L) {
-            currentFps = (int) Math.round((framesInWindow * 1_000_000_000.0) / elapsed);
-            framesInWindow = 0;
+            currentFps = (int) Math.round((timerTicksInWindow * 1_000_000_000.0) / elapsed);
+            timerTicksInWindow = 0;
             fpsWindowStartNanos = now;
         }
     }

@@ -52,7 +52,7 @@ public abstract class Pathfinder implements Runnable {
     private Block end;
     private List<List<Block>> blocksList;
     private boolean moveDiagonally;
-    private GridChangeListener listener = block -> {};
+    private GridChangeListener listener = (_, _) -> {};
     private int delayMillis;
 
     /**
@@ -148,7 +148,7 @@ public abstract class Pathfinder implements Runnable {
     private void allBlocksAreWalls() {
         for (List<Block> row : blocksList) {
             for (Block block : row) {
-                block.makeWall();
+                markWall(block);
             }
         }
         System.out.println("All blocks are walls");
@@ -166,19 +166,29 @@ public abstract class Pathfinder implements Runnable {
     protected void markWalked(Block block) {
         Utils.addDelay(delayMillis);
         block.makeWalked();
-        listener.blockChanged(block);
+        listener.blockChanged(block, true);
     }
 
     protected void markNeighbour(Block block) {
         Utils.addDelay(delayMillis);
         block.makeNeighbour();
-        listener.blockChanged(block);
+        listener.blockChanged(block, true);
     }
 
     protected void markPath(Block block) {
         Utils.addDelay(delayMillis);
         block.makePath();
-        listener.blockChanged(block);
+        listener.blockChanged(block, true);
+    }
+
+    protected void markWall(Block block) {
+        block.makeWall();
+        listener.blockChanged(block, false);
+    }
+
+    protected void markWalkable(Block block) {
+        block.makeWalkable();
+        listener.blockChanged(block, false);
     }
 
 
@@ -215,7 +225,7 @@ public abstract class Pathfinder implements Runnable {
         int randomCol = ThreadLocalRandom.current().nextInt(sizeX);
         Block startBlock = blocksList.get(randomRow).get(randomCol);
 
-        startBlock.makeWalkable();
+        markWalkable(startBlock);
         visited[randomRow][randomCol] = true;
         stack.push(startBlock);
 
@@ -238,10 +248,10 @@ public abstract class Pathfinder implements Runnable {
                 Block randNeighbour = neighbours.get(ThreadLocalRandom.current().nextInt(neighbours.size()));
                 Block path = neighboursAndPaths.get(randNeighbour);
 
-                randNeighbour.makeWalkable();
+                markWalkable(randNeighbour);
                 visited[randNeighbour.getRow()][randNeighbour.getColumn()] = true;
 
-                path.makeWalkable();
+                markWalkable(path);
                 visited[path.getRow()][path.getColumn()] = true;
 
                 stack.push(randNeighbour);
@@ -278,8 +288,8 @@ public abstract class Pathfinder implements Runnable {
             if (!neighbours.isEmpty()) {
                 int randIndex2 = random.nextInt(neighbours.size());
                 Block randNeighbour = (Block) neighbours.keySet().toArray()[randIndex2];
-                neighbours.get(randNeighbour).makeWalkable();
-                randBlock.makeWalkable();
+                markWalkable(neighbours.get(randNeighbour));
+                markWalkable(randBlock);
                 HashMap<Block, Block> newFrontierBlocks = (HashMap<Block, Block>) getMazeNeighbours(randBlock).entrySet().stream()
                         .filter(map -> !map.getKey().isWalkable())
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

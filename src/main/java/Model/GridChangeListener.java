@@ -1,5 +1,5 @@
 package Model;
 
 public interface GridChangeListener {
-    void blockChanged(Block block);
+    void blockChanged(Block block, boolean animate);
 }
