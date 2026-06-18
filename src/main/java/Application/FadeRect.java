@@ -1,13 +1,15 @@
 package Application;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class FadeRect extends Rectangle {
+public class FadeRect {
 
     private static final long ANIMATION_DURATION_NANOS = 320_000_000L;
     private static final java.util.List<FadeRect> animatingRects = new CopyOnWriteArrayList<>();
 
+    private final int row;
+    private final int column;
     private volatile boolean inAnimation = false;
     private volatile double fadeRatio = 0.0;
     private volatile long animationStartNanos = 0L;
@@ -16,8 +18,9 @@ public class FadeRect extends Rectangle {
     private Color currentColor = App.BLOCK_COLOR;
 
 
-    public FadeRect(int row, int column, int width, int height) {
-        super(column * width, row * height, width, height);
+    public FadeRect(int row, int column) {
+        this.row = row;
+        this.column = column;
     }
 
     public static java.util.List<FadeRect> getAnimatingRects() {
@@ -30,6 +33,14 @@ public class FadeRect extends Rectangle {
 
     public boolean isInAnimation() {
         return inAnimation;
+    }
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getColumn() {
+        return column;
     }
 
     public double getFadeRatio() {

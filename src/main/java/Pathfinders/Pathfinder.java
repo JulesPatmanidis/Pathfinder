@@ -172,7 +172,7 @@ public abstract class Pathfinder implements Runnable {
     protected void markNeighbour(Block block) {
         Utils.addDelay(delayMillis);
         block.makeNeighbour();
-        listener.blockChanged(block, true);
+        listener.blockChanged(block, false);
     }
 
     protected void markPath(Block block) {

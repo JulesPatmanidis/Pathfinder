@@ -444,7 +444,6 @@ public class App {
 
         // CENTRE PANEL -----------------------------------------------------
         centrePanel = new GridView();//JPanel();
-        applyGridLayout();
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
         globalPanel.add(centrePanel, BorderLayout.CENTER);
@@ -565,7 +564,6 @@ public class App {
      */
     private void initPathfinder() {
         this.pathfinder = new AStarPathfinder();
-        //applyGridLayout();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
@@ -612,8 +610,8 @@ public class App {
             @Override
             public void mouseClicked(MouseEvent e) {
                 // System.out.println("centrePanel clicked at: " + e.getPoint());
-                int col = e.getX() / gridConfig.cellSize;
-                int row = e.getY() / gridConfig.cellSize;
+                int col = centrePanel.getColumnAtX(e.getX());
+                int row = centrePanel.getRowAtY(e.getY());
 
                 // System.out.println("Clicked block at row: " + row + ", column: " + col);
 
@@ -714,8 +712,8 @@ public class App {
         if (state != State.EDIT_MAP) {
             return;
         }
-        int col = e.getX() / gridConfig.cellSize;
-        int row = e.getY() / gridConfig.cellSize;
+        int col = centrePanel.getColumnAtX(e.getX());
+        int row = centrePanel.getRowAtY(e.getY());
         List<List<Block>> blocks = pathfinder.getBlocks();
         if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
             Block block = blocks.get(row).get(col);
@@ -829,12 +827,6 @@ public class App {
         int rows = DEFAULT_GRID_ROWS;
         int cols = Math.max(5, (int) Math.round(rows * Utils.getAspectRatio()));
         return new GridConfig(rows, cols, DEFAULT_CELL_SIZE);
-    }
-
-    private void applyGridLayout() {
-        if (centrePanel != null && gridConfig != null) {
-            centrePanel.setLayout(new GridLayout(gridConfig.rows, gridConfig.cols, 0, 0));
-        }
     }
 
     private void applyGridSettings() {
