@@ -5,6 +5,8 @@ build/
 !**/src/**/build/
 out/
 *.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 
 # IntelliJ IDEA
 .idea/
