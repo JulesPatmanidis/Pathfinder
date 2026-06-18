@@ -129,13 +129,33 @@ public class GridView extends JPanel {
             return;
         }
 
-        for (int row = 0; row < grid.getRows(); row++) {
-            for (int col = 0; col < grid.getColumns(); col++) {
+        // Only repaint "dirty" rectangles (bounding box)
+        Rectangle clip = g.getClipBounds();
+        int originX = getGridOriginX();
+        int originY = getGridOriginY();
+        int gridPixelWidth = getGridPixelWidth();
+        int gridPixelHeight = getGridPixelHeight();
+
+        int startCol = Math.max(0, (clip.x - originX) / cellSize);
+        int endCol = Math.min(grid.getColumns() - 1, (clip.x + clip.width - originX - 1) / cellSize);
+        int startRow = Math.max(0, (clip.y - originY) / cellSize);
+        int endRow = Math.min(grid.getRows() - 1, (clip.y + clip.height - originY - 1) / cellSize);
+
+        if (clip.x + clip.width <= originX
+                || clip.y + clip.height <= originY
+                || clip.x >= originX + gridPixelWidth
+                || clip.y >= originY + gridPixelHeight) {
+            return;
+        }
+
+        for (int row = startRow; row <= endRow; row++) {
+            int y = originY + row * cellSize;
+            for (int col = startCol; col <= endCol; col++) {
                 CellAnimation cellAnimation = cellAnimations.get(row).get(col);
-                Rectangle bounds = getCellBounds(row, col);
+                int x = originX + col * cellSize;
 
                 g.setColor(cellAnimation.getCurrentColor());
-                fillCell(g, bounds, 1.0);
+                g.fillRect(x, y, cellSize, cellSize);
             }
         }
 
@@ -143,10 +163,11 @@ public class GridView extends JPanel {
 
         if (drawBorders) {
             g.setColor(App.BLOCK_BORDER_COLOR);
-            for (int row = 0; row < grid.getRows(); row++) {
-                for (int col = 0; col < grid.getColumns(); col++) {
-                    Rectangle bounds = getCellBounds(row, col);
-                    g.drawRect(bounds.x, bounds.y, bounds.width - 1, bounds.height - 1);
+            for (int row = startRow; row <= endRow; row++) {
+                int y = originY + row * cellSize;
+                for (int col = startCol; col <= endCol; col++) {
+                    int x = originX + col * cellSize;
+                    g.drawRect(x, y, cellSize - 1, cellSize - 1);
                 }
             }
         }
@@ -156,11 +177,14 @@ public class GridView extends JPanel {
                 if (cellAnimation.getScale() <= 1.0) {
                     continue;
                 }
-                Rectangle bounds = getCellBounds(cellAnimation.getRow(), cellAnimation.getColumn());
+                int x = originX + cellAnimation.getColumn() * cellSize;
+                int y = originY + cellAnimation.getRow() * cellSize;
                 g.setColor(cellAnimation.getCurrentColor());
-                fillCell(g, bounds, cellAnimation.getScale());
+                fillCell(g, x, y, cellAnimation.getScale());
                 g.setColor(App.BLOCK_BORDER_COLOR);
-                if (drawBorders) drawCellBorder(g, bounds, cellAnimation.getScale());
+                if (drawBorders) {
+                    drawCellBorder(g, x, y, cellAnimation.getScale());
+                }
             }
         }
     }
@@ -170,39 +194,31 @@ public class GridView extends JPanel {
             return;
         }
 
-        Rectangle bounds = getCellBounds(row, column);
+        int x = getGridOriginX() + column * cellSize;
+        int y = getGridOriginY() + row * cellSize;
         int overflow = (int) Math.ceil(cellSize * ((CellAnimation.getPathStartScale() - 1.0) / 2.0));
         repaint(
-                bounds.x - overflow,
-                bounds.y - overflow,
-                bounds.width + (2 * overflow) + 1,
-                bounds.height + (2 * overflow) + 1
+                x - overflow,
+                y - overflow,
+                cellSize + (2 * overflow) + 1,
+                cellSize + (2 * overflow) + 1
         );
     }
 
-    private void fillCell(Graphics g, Rectangle bounds, double scale) {
-        int scaledWidth = (int) Math.round(bounds.width * scale);
-        int scaledHeight = (int) Math.round(bounds.height * scale);
-        int x = bounds.x - ((scaledWidth - bounds.width) / 2);
-        int y = bounds.y - ((scaledHeight - bounds.height) / 2);
-        g.fillRect(x, y, scaledWidth, scaledHeight);
+    private void fillCell(Graphics g, int x, int y, double scale) {
+        int scaledWidth = (int) Math.round(cellSize * scale);
+        int scaledHeight = (int) Math.round(cellSize * scale);
+        int scaledX = x - ((scaledWidth - cellSize) / 2);
+        int scaledY = y - ((scaledHeight - cellSize) / 2);
+        g.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
     }
 
-    private void drawCellBorder(Graphics g, Rectangle bounds, double scale) {
-        int scaledWidth = (int) Math.round(bounds.width * scale);
-        int scaledHeight = (int) Math.round(bounds.height * scale);
-        int x = bounds.x - ((scaledWidth - bounds.width) / 2);
-        int y = bounds.y - ((scaledHeight - bounds.height) / 2);
-        g.drawRect(x, y, scaledWidth - 1, scaledHeight - 1);
-    }
-
-    private Rectangle getCellBounds(int row, int column) {
-        return new Rectangle(
-                getGridOriginX() + column * cellSize,
-                getGridOriginY() + row * cellSize,
-                cellSize,
-                cellSize
-        );
+    private void drawCellBorder(Graphics g, int x, int y, double scale) {
+        int scaledWidth = (int) Math.round(cellSize * scale);
+        int scaledHeight = (int) Math.round(cellSize * scale);
+        int scaledX = x - ((scaledWidth - cellSize) / 2);
+        int scaledY = y - ((scaledHeight - cellSize) / 2);
+        g.drawRect(scaledX, scaledY, scaledWidth - 1, scaledHeight - 1);
     }
 
     private int getGridOriginX() {

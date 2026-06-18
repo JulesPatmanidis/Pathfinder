@@ -27,7 +27,7 @@ public class App {
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
     public static final String RANDOMISED_PRIMS = "Randomised Prim's";
     public static final String RANDOMIZED_DFS = "Randomised DFS";
-    public static final Color DEFAULT_BACKGROUND = new Color(0, 0, 0);
+    public static final Color DEFAULT_BACKGROUND = new Color(18, 18, 18);
     public static final Color DEFAULT_BLOCK_COLOR = new Color(139, 139, 144);
     public static final Color DEFAULT_BLOCK_BORDER_COLOR = new Color(40, 40, 40);
     public static final Color TEXT_COLOR = new Color(211, 211, 211);
@@ -47,7 +47,7 @@ public class App {
     public static Color NEIGHBOUR_COLOR = DEFAULT_NEIGHBOUR_COLOR;
     public static Color VISITED_COLOR = DEFAULT_VISITED_COLOR;
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
-    public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
+    public static final Font GLOBAL_FONT = new Font("Sans Serif", Font.PLAIN, 20);
     private static final String FRAME_TITLE = "Pathfinder";
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20, 20, 20, 20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10, 23, 10, 23);
@@ -133,7 +133,7 @@ public class App {
     private static final GridPalette[] GRID_PALETTES = {
             new GridPalette(
                     "Original",
-                    new Color(0, 0, 0),
+                    DEFAULT_BACKGROUND,
                     new Color(139, 139, 144),
                     new Color(40, 40, 40),
                     new Color(139, 0, 0),
@@ -250,13 +250,13 @@ public class App {
         topPanel.setBackground(PANEL_COLOUR);
 
         JLabel topLabel = new JLabel("PATHFINDER");
-        topLabel.setFont(new Font("Times New Roman", Font.BOLD, 40));
+        topLabel.setFont(new Font("Sans Serif", Font.BOLD, 40));
         topLabel.setForeground(TEXT_COLOR);
         topLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         topPanel.add(topLabel, BorderLayout.CENTER);
 
         fpsLabel = new JLabel("FPS: --");
-        fpsLabel.setFont(new Font("Times New Roman", Font.PLAIN, 18));
+        fpsLabel.setFont(new Font("Sans Serif", Font.PLAIN, 18));
         fpsLabel.setForeground(TEXT_COLOR);
         fpsLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         topPanel.add(fpsLabel, BorderLayout.EAST);
@@ -365,7 +365,7 @@ public class App {
         String[] paletteNames = Arrays.stream(GRID_PALETTES).map(p -> p.name).toArray(String[]::new);
         paletteComboBox = new JComboBox<>(paletteNames);
         paletteComboBox.setMaximumSize(new Dimension(150, 35));
-        paletteComboBox.setFont(new Font("Times New Roman", Font.PLAIN, 16));
+        paletteComboBox.setFont(new Font("Sans Serif", Font.PLAIN, 16));
         paletteComboBox.addActionListener(event -> applySelectedPalette());
         bottomControlsRow.add(paletteComboBox);
 
@@ -377,7 +377,7 @@ public class App {
         bottomControlsRow.add(cellSizeLabel);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(4, 0)));
 
-        cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 4, 40, 1));
+        cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 2, 40, 1));
         cellSizeSpinner.setMaximumSize(new Dimension(60, 35));
         bottomControlsRow.add(cellSizeSpinner);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(8, 0)));
