@@ -24,7 +24,7 @@ tasks.register('fatJar', Jar) {  // parentheses are required
     group = 'build'
     description = 'Assembles a fat JAR including all dependencies.'
 
-    archiveBaseName.set(project.name)
+    archiveFileName.set("${project.name}.jar")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {
