@@ -1,8 +1,8 @@
 package Application;
 
 import Model.Block;
-import Model.BlockState;
 import Model.Grid;
+import Model.GridEvent;
 import Pathfinders.*;
 import Utilities.Utils;
 
@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class App {
     private static final int DEFAULT_GRID_ROWS = 80;
@@ -48,9 +49,6 @@ public class App {
     public static Color VISITED_COLOR = DEFAULT_VISITED_COLOR;
     public static final Color PANEL_COLOUR = new Color(39, 39, 39);
     public static final Font GLOBAL_FONT = new Font("Times New Roman", Font.PLAIN, 20);
-    /**
-     * CONSTANTS
-     **/
     private static final String FRAME_TITLE = "Pathfinder";
     private static final Border MAIN_BORDER = BorderFactory.createEmptyBorder(20, 20, 20, 20);
     private static final Border TOP_BORDER = BorderFactory.createEmptyBorder(10, 23, 10, 23);
@@ -59,8 +57,8 @@ public class App {
     private static final String[] algorithmInfo = new String[ALGORITHMS.length];
     private static final String[] MAZES =
             {RANDOMIZED_DFS, RANDOMISED_PRIMS};
+
     public static boolean isFadeChecked = true;
-    public static int paintDelay = 50;
     public static boolean allowDiagonal = true;
     private JPanel globalPanel;
     private JPanel bottomPanel;
@@ -92,6 +90,11 @@ public class App {
     private State state;
     private boolean isDrawingWall = false;
     private GridConfig gridConfig;
+
+
+    private final java.util.Queue<QueuedGridEvent> eventQueue = new ConcurrentLinkedQueue<>();
+    private Timer playbackTimer;
+
 
     private static final class MazePalette {
         private final String name;
@@ -211,6 +214,9 @@ public class App {
         }
     }
 
+    private record QueuedGridEvent(GridEvent event, int gridVersion) {
+    }
+
     public App() {
         System.out.println("App: " + Thread.currentThread());
         try {
@@ -312,7 +318,7 @@ public class App {
 
         bottomInfoRow.add(Box.createHorizontalGlue());
 
-        sliderLabel = new JLabel("Delay (ms):");
+        sliderLabel = new JLabel("Playback:");
         sliderLabel.setFont(GLOBAL_FONT);
         sliderLabel.setBackground(PANEL_COLOUR);
         sliderLabel.setForeground(TEXT_COLOR);
@@ -323,8 +329,8 @@ public class App {
         sliderValueLabel.setFont(GLOBAL_FONT);
         sliderValueLabel.setBackground(PANEL_COLOUR);
         sliderValueLabel.setForeground(TEXT_COLOR);
-        sliderValueLabel.setPreferredSize(new Dimension(70, 40));
-        sliderValueLabel.setMinimumSize(new Dimension(70, 40));
+        sliderValueLabel.setPreferredSize(new Dimension(120, 40));
+        sliderValueLabel.setMinimumSize(new Dimension(120, 40));
 
         bottomControlsRow.add(sliderValueLabel);
 
@@ -336,19 +342,13 @@ public class App {
         delaySlider.setBackground(BLOCK_BORDER_COLOR);
         delaySlider.setForeground(TEXT_COLOR);
         delaySlider.setMaximumSize(new Dimension(150, 35));
-        delaySlider.setToolTipText("Delay");
+        delaySlider.setToolTipText("Playback speed");
 
         delaySlider.addChangeListener(changeEvent -> {
-            paintDelay = delaySlider.getValue();
-
-            if (pathfinder != null) {
-                pathfinder.setDelayMillis(delaySlider.getValue());
-            }
-
-            sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
+            updatePlaybackSpeedLabel();
         });
 
-        sliderValueLabel.setText(String.valueOf(delaySlider.getValue()));
+        updatePlaybackSpeedLabel();
         bottomControlsRow.add(delaySlider);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
@@ -452,6 +452,8 @@ public class App {
         globalPanel.add(centrePanel, BorderLayout.CENTER);
         fpsLabelTimer = new Timer(250, event -> fpsLabel.setText("FPS: " + centrePanel.getCurrentFps()));
         fpsLabelTimer.start();
+        playbackTimer = new Timer(16, event -> playGridEvents());
+        playbackTimer.start();
 
         // LEFT PANEL -----------------------------------------------------
         int leftPanelWidth = 300;
@@ -567,6 +569,7 @@ public class App {
      */
     private void initPathfinder() {
         gridVersion++;
+
         this.pathfinder = new AStarPathfinder();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
@@ -590,6 +593,41 @@ public class App {
 
         configurePathfinderCallbacks();
 
+    }
+
+    private void playGridEvents() {
+        int eventsThisFrame = getEventsPerFrame();
+
+        for (int i = 0; i < eventsThisFrame; i++) {
+            QueuedGridEvent event = eventQueue.poll();
+            if (event == null) {
+                break;
+            }
+
+            if (event.gridVersion() != gridVersion) {
+                continue;
+            }
+
+            GridEvent gridEvent = event.event();
+            centrePanel.applyBlockChange(
+                    gridEvent.row(),
+                    gridEvent.column(),
+                    gridEvent.state(),
+                    gridEvent.animate()
+            );
+        }
+    }
+
+    private int getEventsPerFrame() {
+        int value = delaySlider.getValue();
+        double t = value / 100.0;
+        double maxEventsPerFrame = 10_000.0;
+        double minEventsPerFrame = 1.0;
+        return Math.max(1, (int) Math.round(maxEventsPerFrame * Math.pow(minEventsPerFrame / maxEventsPerFrame, t)));
+    }
+
+    private void updatePlaybackSpeedLabel() {
+        sliderValueLabel.setText(getEventsPerFrame() + "/frame");
     }
 
 
@@ -617,8 +655,6 @@ public class App {
                 int col = centrePanel.getColumnAtX(e.getX());
                 int row = centrePanel.getRowAtY(e.getY());
 
-                // System.out.println("Clicked block at row: " + row + ", column: " + col);
-
                 List<List<Block>> blocks = pathfinder.getBlocks();
                 if (row < 0 || row >= blocks.size() || col < 0 || col >= blocks.get(row).size()) {
                     return;
@@ -629,12 +665,12 @@ public class App {
                 if (clickCount == 1) {
                     pathfinder.setStart(clickedBlock);
                     clickedBlock.makeStartEnd();
-                    centrePanel.applyBlockChange(clickedBlock, clickedBlock.getState(), false);
+                    centrePanel.applyBlockChange(row, col, clickedBlock.getState(), false);
                 }
                 if (clickCount == 2) {
                     pathfinder.setEnd(clickedBlock);
                     clickedBlock.makeStartEnd();
-                    centrePanel.applyBlockChange(clickedBlock, clickedBlock.getState(), false);
+                    centrePanel.applyBlockChange(row, col, clickedBlock.getState(), false);
                     updateState();
                 }
             }
@@ -726,7 +762,7 @@ public class App {
             }
             block.setWalkable(false);
             block.makeWall();
-            centrePanel.applyBlockChange(block, block.getState(), false);
+            centrePanel.applyBlockChange(row, col, block.getState(), false);
         }
     }
 
@@ -741,7 +777,6 @@ public class App {
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         selectPathfinder();
         configurePathfinderCallbacks();
-        pathfinder.setDelayMillis(paintDelay);
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
         algorithmThread = new Thread(pathfinder);
@@ -776,18 +811,8 @@ public class App {
     }
 
     private void configurePathfinderCallbacks() {
-        pathfinder.setDelayMillis(paintDelay);
         int callbackGridVersion = gridVersion;
-
-        pathfinder.setGridChangeListener((block, animate) -> {
-            BlockState state = block.getState();
-            SwingUtilities.invokeLater(() -> {
-                if (callbackGridVersion != gridVersion) {
-                    return;
-                }
-                centrePanel.applyBlockChange(block, state, animate);
-            });
-        });
+        pathfinder.setGridChangeListener(event -> eventQueue.add(new QueuedGridEvent(event, callbackGridVersion)));
     }
 
     private void selectMaze() {
@@ -817,6 +842,8 @@ public class App {
             algorithmThread.interrupt();
         }
         algorithmThread = null;
+
+        eventQueue.clear();
 
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
@@ -887,7 +914,7 @@ public class App {
         }
         if (centrePanel != null) {
             centrePanel.setBackground(BACKGROUND);
-            centrePanel.repaint();
+            centrePanel.refreshColors();
         }
     }
 

@@ -50,10 +50,8 @@ public class GridView extends JPanel {
         return cellAnimations;
     }
 
-    public void applyBlockChange(Block block, BlockState state, boolean animate) {
-        CellAnimation cellAnimation = cellAnimations
-                .get(block.getRow())
-                .get(block.getColumn());
+    public void applyBlockChange(int row, int col, BlockState state, boolean animate) {
+        CellAnimation cellAnimation = cellAnimations.get(row).get(col);
         Color targetColor = getTargetColor(state);
 
         if (animate && App.isFadeChecked && state == BlockState.PATH) {
@@ -64,7 +62,22 @@ public class GridView extends JPanel {
             cellAnimation.setCurrentColor(targetColor);
         }
 
-        repaintCell(block.getRow(), block.getColumn());
+        repaintCell(row, col);
+    }
+
+    public void refreshColors() {
+        if (grid == null || cellAnimations == null) {
+            return;
+        }
+
+        CellAnimation.clearAnimatingCells();
+        for (int row = 0; row < grid.getRows(); row++) {
+            for (int col = 0; col < grid.getColumns(); col++) {
+                BlockState state = grid.getBlock(row, col).getState();
+                cellAnimations.get(row).get(col).setCurrentColor(getTargetColor(state));
+            }
+        }
+        repaint();
     }
 
     public int getCurrentFps() {

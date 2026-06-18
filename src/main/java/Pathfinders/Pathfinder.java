@@ -2,7 +2,7 @@ package Pathfinders;
 
 import Model.Block;
 import Model.GridChangeListener;
-import Utilities.Utils;
+import Model.GridEvent;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
@@ -53,8 +53,7 @@ public abstract class Pathfinder implements Runnable {
     private Block end;
     private List<List<Block>> blocksList;
     private boolean moveDiagonally;
-    private GridChangeListener listener = (block, animate) -> {};
-    private int delayMillis;
+    private GridChangeListener listener = gridEvent -> {};
     private volatile boolean cancelled = false;
 
     /**
@@ -161,10 +160,6 @@ public abstract class Pathfinder implements Runnable {
         this.listener = listener;
     }
 
-    public void setDelayMillis(int delayMillis) {
-        this.delayMillis = delayMillis;
-    }
-
     public void cancel() {
         cancelled = true;
     }
@@ -173,46 +168,34 @@ public abstract class Pathfinder implements Runnable {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             throw new CancellationException();
         }
-        Utils.addDelay(delayMillis);
-        if (cancelled || Thread.currentThread().isInterrupted()) {
-            throw new CancellationException();
-        }
         block.makeWalked();
-        listener.blockChanged(block, true);
+        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), true));
     }
 
     protected void markNeighbour(Block block) {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             throw new CancellationException();
         }
-        Utils.addDelay(delayMillis);
-        if (cancelled || Thread.currentThread().isInterrupted()) {
-            throw new CancellationException();
-        }
         block.makeNeighbour();
-        listener.blockChanged(block, false);
+        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));
     }
 
     protected void markPath(Block block) {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             throw new CancellationException();
         }
-        Utils.addDelay(delayMillis);
-        if (cancelled || Thread.currentThread().isInterrupted()) {
-            throw new CancellationException();
-        }
         block.makePath();
-        listener.blockChanged(block, true);
+        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), true));
     }
 
     protected void markWall(Block block) {
         block.makeWall();
-        listener.blockChanged(block, false);
+        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));
     }
 
     protected void markWalkable(Block block) {
         block.makeWalkable();
-        listener.blockChanged(block, false);
+        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));
     }
 
 
