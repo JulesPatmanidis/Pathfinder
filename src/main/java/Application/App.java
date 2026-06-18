@@ -769,15 +769,23 @@ public class App {
         if (state.equals(State.EDIT_MAP) || clickCount > 0) {
             return;
         }
-        switch (mazeList.getSelectedValue()) {
-            case RANDOMIZED_DFS:
-                pathfinder.createDFSMaze();
-                break;
-            case RANDOMISED_PRIMS:
-                pathfinder.createPrimsMaze();
-                break;
-            default:
-                break;
+        eventQueue.clear();
+        // "Hacky" way to not add delay to maze generation
+        pathfinder.setGridChangeListener(event -> {});
+        try {
+            switch (mazeList.getSelectedValue()) {
+                case RANDOMIZED_DFS:
+                    pathfinder.createDFSMaze();
+                    break;
+                case RANDOMISED_PRIMS:
+                    pathfinder.createPrimsMaze();
+                    break;
+                default:
+                    break;
+            }
+            centrePanel.refreshColors();
+        } finally {
+            configurePathfinderCallbacks();
         }
     }
 

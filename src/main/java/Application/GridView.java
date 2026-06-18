@@ -6,15 +6,25 @@ import Model.Grid;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class GridView extends JPanel {
 
+    private final Set<CellAnimation> animatingCells = new LinkedHashSet<>();
     private final Timer repaintTimer = new Timer(16, event -> {
         updateFpsCounter();
-        for (CellAnimation cellAnimation : CellAnimation.getAnimatingCells()) {
-            cellAnimation.step();
+        Iterator<CellAnimation> iterator = animatingCells.iterator();
+        while (iterator.hasNext()) {
+            CellAnimation cellAnimation = iterator.next();
+
+            boolean stillAnimating = cellAnimation.step();
             repaintCell(cellAnimation.getRow(), cellAnimation.getColumn());
+            if (!stillAnimating) {
+                iterator.remove();
+            }
         }
     });
 
@@ -34,7 +44,7 @@ public class GridView extends JPanel {
         this.grid = grid;
         this.cellSize = cellSize;
         this.cellAnimations = createCellAnimations(grid);
-        CellAnimation.clearAnimatingCells();
+        animatingCells.clear();
         revalidate();
         repaint();
     }
@@ -56,10 +66,13 @@ public class GridView extends JPanel {
 
         if (animate && App.isFadeChecked && state == BlockState.PATH) {
             cellAnimation.startPathAnimation(targetColor);
+            animatingCells.add(cellAnimation);
         } else if (animate && App.isFadeChecked) {
             cellAnimation.startFadeAnimation(targetColor);
+            animatingCells.add(cellAnimation);
         } else {
             cellAnimation.setCurrentColor(targetColor);
+            animatingCells.remove(cellAnimation);
         }
 
         repaintCell(row, col);
@@ -70,7 +83,7 @@ public class GridView extends JPanel {
             return;
         }
 
-        CellAnimation.clearAnimatingCells();
+        animatingCells.clear();
         for (int row = 0; row < grid.getRows(); row++) {
             for (int col = 0; col < grid.getColumns(); col++) {
                 BlockState state = grid.getBlock(row, col).getState();
@@ -173,7 +186,7 @@ public class GridView extends JPanel {
         }
 
         if (App.isFadeChecked) {
-            for (CellAnimation cellAnimation : CellAnimation.getAnimatingCells()) {
+            for (CellAnimation cellAnimation : animatingCells) {
                 if (cellAnimation.getScale() <= 1.0) {
                     continue;
                 }

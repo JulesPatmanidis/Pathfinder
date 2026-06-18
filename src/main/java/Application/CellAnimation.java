@@ -1,7 +1,6 @@
 package Application;
 
 import java.awt.Color;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class CellAnimation {
 
@@ -13,8 +12,6 @@ public class CellAnimation {
     private static final long FADE_ANIMATION_DURATION_NANOS = 320_000_000L;
     private static final long PATH_ANIMATION_DURATION_NANOS = 520_000_000L;
     private static final double PATH_START_SCALE = 1.75;
-    private static final java.util.List<CellAnimation> animatingCells = new CopyOnWriteArrayList<>();
-
     private final int row;
     private final int column;
     private volatile boolean inAnimation = false;
@@ -30,14 +27,6 @@ public class CellAnimation {
     public CellAnimation(int row, int column) {
         this.row = row;
         this.column = column;
-    }
-
-    public static java.util.List<CellAnimation> getAnimatingCells() {
-        return animatingCells;
-    }
-
-    public static void clearAnimatingCells() {
-        animatingCells.clear();
     }
 
     public static double getPathStartScale() {
@@ -56,10 +45,9 @@ public class CellAnimation {
         return column;
     }
 
-    public synchronized void step() {
+    public synchronized boolean step() {
         if (!inAnimation) {
-            animatingCells.remove(this);
-            return;
+            return false;
         }
         long elapsedNanos = Math.max(0L, System.nanoTime() - animationStartNanos);
         long durationNanos = animationType == AnimationType.PATH_SCALE
@@ -79,8 +67,9 @@ public class CellAnimation {
             currentColor = animationEndColor;
             scale = 1.0;
             inAnimation = false;
-            animatingCells.remove(this);
+            return false;
         }
+        return true;
     }
 
     public synchronized Color getCurrentColor() {
@@ -103,9 +92,6 @@ public class CellAnimation {
         animationRatio = 0.0;
         scale = 1.0;
         inAnimation = true;
-        if (!animatingCells.contains(this)) {
-            animatingCells.add(this);
-        }
     }
 
     public synchronized void startPathAnimation(Color targetColor) {
@@ -117,9 +103,6 @@ public class CellAnimation {
         animationRatio = 0.0;
         scale = PATH_START_SCALE;
         inAnimation = true;
-        if (!animatingCells.contains(this)) {
-            animatingCells.add(this);
-        }
     }
 
     private Color interpolate(Color startColor, Color endColor, double ratio) {
