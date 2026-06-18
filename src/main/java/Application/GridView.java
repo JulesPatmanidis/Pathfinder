@@ -1,6 +1,7 @@
 package Application;
 
 import Model.Block;
+import Model.BlockState;
 import Model.Grid;
 
 import javax.swing.*;
@@ -11,14 +12,14 @@ public class GridView extends JPanel {
 
     private final Timer repaintTimer = new Timer(16, event -> {
         updateFpsCounter();
-        for (FadeRect rect : FadeRect.getAnimatingRects()) {
-            rect.incrementFadeRatio();
-            repaintCell(rect.getRow(), rect.getColumn());
+        for (CellAnimation cellAnimation : CellAnimation.getAnimatingCells()) {
+            cellAnimation.step();
+            repaintCell(cellAnimation.getRow(), cellAnimation.getColumn());
         }
     });
 
     private Grid grid;
-    private List<List<FadeRect>> fadeRects;
+    private List<List<CellAnimation>> cellAnimations;
     private int cellSize;
     private long fpsWindowStartNanos = System.nanoTime();
     private int timerTicksInWindow = 0;
@@ -32,31 +33,37 @@ public class GridView extends JPanel {
     public void setGrid(Grid grid, int cellSize) {
         this.grid = grid;
         this.cellSize = cellSize;
-        this.fadeRects = createFadeRects(grid);
-        FadeRect.clearAnimatingRects();
+        this.cellAnimations = createCellAnimations(grid);
+        CellAnimation.clearAnimatingCells();
         revalidate();
         repaint();
     }
 
-    private List<List<FadeRect>> createFadeRects(Grid grid) {
-        List<List<FadeRect>> fadeRects = new java.util.ArrayList<>();
+    private List<List<CellAnimation>> createCellAnimations(Grid grid) {
+        List<List<CellAnimation>> cellAnimations = new java.util.ArrayList<>();
         for (int row = 0; row < grid.getRows(); row++) {
-            fadeRects.add(row, new java.util.ArrayList<>());
+            cellAnimations.add(row, new java.util.ArrayList<>());
             for (int col = 0; col < grid.getColumns(); col++) {
-                fadeRects.get(row).add(col, new FadeRect(row, col));
+                cellAnimations.get(row).add(col, new CellAnimation(row, col));
             }
         }
-        return fadeRects;
+        return cellAnimations;
     }
 
-    public void startAnimation(Block block) {
-        fadeRects
+    public void applyBlockChange(Block block, BlockState state, boolean animate) {
+        CellAnimation cellAnimation = cellAnimations
                 .get(block.getRow())
-                .get(block.getColumn())
-                .startAnimation(getTargetColor(block));
-    }
+                .get(block.getColumn());
+        Color targetColor = getTargetColor(state);
 
-    public void repaintBlock(Block block) {
+        if (animate && App.isFadeChecked && state == BlockState.PATH) {
+            cellAnimation.startPathAnimation(targetColor);
+        } else if (animate && App.isFadeChecked) {
+            cellAnimation.startFadeAnimation(targetColor);
+        } else {
+            cellAnimation.setCurrentColor(targetColor);
+        }
+
         repaintCell(block.getRow(), block.getColumn());
     }
 
@@ -105,35 +112,42 @@ public class GridView extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        if (grid == null || fadeRects == null) {
+        if (grid == null || cellAnimations == null) {
             return;
         }
 
         for (int row = 0; row < grid.getRows(); row++) {
             for (int col = 0; col < grid.getColumns(); col++) {
-                FadeRect fadeRect = fadeRects.get(row).get(col);
-                Block block = grid.getBlock(row, col);
+                CellAnimation cellAnimation = cellAnimations.get(row).get(col);
                 Rectangle bounds = getCellBounds(row, col);
 
-                if (fadeRect.isInAnimation() && App.isFadeChecked) {
-                    g.setColor(fadeRect.getCurrentColor());
-                } else {
-                    Color targetColor = getTargetColor(block);
-                    fadeRect.setCurrentColor(targetColor);
-                    g.setColor(targetColor);
-                }
-
-                g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+                g.setColor(cellAnimation.getCurrentColor());
+                fillCell(g, bounds, 1.0);
             }
         }
 
-        if (cellSize > 8) {
+        boolean drawBorders = cellSize > 8;
+
+        if (drawBorders) {
             g.setColor(App.BLOCK_BORDER_COLOR);
             for (int row = 0; row < grid.getRows(); row++) {
                 for (int col = 0; col < grid.getColumns(); col++) {
                     Rectangle bounds = getCellBounds(row, col);
                     g.drawRect(bounds.x, bounds.y, bounds.width - 1, bounds.height - 1);
                 }
+            }
+        }
+
+        if (App.isFadeChecked) {
+            for (CellAnimation cellAnimation : CellAnimation.getAnimatingCells()) {
+                if (cellAnimation.getScale() <= 1.0) {
+                    continue;
+                }
+                Rectangle bounds = getCellBounds(cellAnimation.getRow(), cellAnimation.getColumn());
+                g.setColor(cellAnimation.getCurrentColor());
+                fillCell(g, bounds, cellAnimation.getScale());
+                g.setColor(App.BLOCK_BORDER_COLOR);
+                if (drawBorders) drawCellBorder(g, bounds, cellAnimation.getScale());
             }
         }
     }
@@ -144,7 +158,29 @@ public class GridView extends JPanel {
         }
 
         Rectangle bounds = getCellBounds(row, column);
-        repaint(bounds.x, bounds.y, bounds.width + 1, bounds.height + 1);
+        int overflow = (int) Math.ceil(cellSize * ((CellAnimation.getPathStartScale() - 1.0) / 2.0));
+        repaint(
+                bounds.x - overflow,
+                bounds.y - overflow,
+                bounds.width + (2 * overflow) + 1,
+                bounds.height + (2 * overflow) + 1
+        );
+    }
+
+    private void fillCell(Graphics g, Rectangle bounds, double scale) {
+        int scaledWidth = (int) Math.round(bounds.width * scale);
+        int scaledHeight = (int) Math.round(bounds.height * scale);
+        int x = bounds.x - ((scaledWidth - bounds.width) / 2);
+        int y = bounds.y - ((scaledHeight - bounds.height) / 2);
+        g.fillRect(x, y, scaledWidth, scaledHeight);
+    }
+
+    private void drawCellBorder(Graphics g, Rectangle bounds, double scale) {
+        int scaledWidth = (int) Math.round(bounds.width * scale);
+        int scaledHeight = (int) Math.round(bounds.height * scale);
+        int x = bounds.x - ((scaledWidth - bounds.width) / 2);
+        int y = bounds.y - ((scaledHeight - bounds.height) / 2);
+        g.drawRect(x, y, scaledWidth - 1, scaledHeight - 1);
     }
 
     private Rectangle getCellBounds(int row, int column) {
@@ -176,8 +212,8 @@ public class GridView extends JPanel {
         return grid.getRows() * cellSize;
     }
 
-    private Color getTargetColor(Block block) {
-        return switch (block.getState()) {
+    private Color getTargetColor(BlockState state) {
+        return switch (state) {
             case START_END -> App.PRESSED_COLOR;
             case WALKED -> App.VISITED_COLOR;
             case NEIGHBOUR -> App.NEIGHBOUR_COLOR;

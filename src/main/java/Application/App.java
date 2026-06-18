@@ -1,6 +1,7 @@
 package Application;
 
 import Model.Block;
+import Model.BlockState;
 import Model.Grid;
 import Pathfinders.*;
 import Utilities.Utils;
@@ -628,12 +629,12 @@ public class App {
                 if (clickCount == 1) {
                     pathfinder.setStart(clickedBlock);
                     clickedBlock.makeStartEnd();
-                    centrePanel.repaintBlock(clickedBlock);
+                    centrePanel.applyBlockChange(clickedBlock, clickedBlock.getState(), false);
                 }
                 if (clickCount == 2) {
                     pathfinder.setEnd(clickedBlock);
                     clickedBlock.makeStartEnd();
-                    centrePanel.repaintBlock(clickedBlock);
+                    centrePanel.applyBlockChange(clickedBlock, clickedBlock.getState(), false);
                     updateState();
                 }
             }
@@ -725,7 +726,7 @@ public class App {
             }
             block.setWalkable(false);
             block.makeWall();
-            centrePanel.repaintBlock(block);
+            centrePanel.applyBlockChange(block, block.getState(), false);
         }
     }
 
@@ -779,14 +780,12 @@ public class App {
         int callbackGridVersion = gridVersion;
 
         pathfinder.setGridChangeListener((block, animate) -> {
+            BlockState state = block.getState();
             SwingUtilities.invokeLater(() -> {
                 if (callbackGridVersion != gridVersion) {
                     return;
                 }
-                if (animate) {
-                    centrePanel.startAnimation(block);
-                }
-                centrePanel.repaintBlock(block);
+                centrePanel.applyBlockChange(block, state, animate);
             });
         });
     }
