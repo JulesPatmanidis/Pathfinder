@@ -5,6 +5,7 @@ import Model.GridChangeListener;
 import Utilities.Utils;
 
 import java.util.*;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,7 @@ public abstract class Pathfinder implements Runnable {
     private boolean moveDiagonally;
     private GridChangeListener listener = (block, animate) -> {};
     private int delayMillis;
+    private volatile boolean cancelled = false;
 
     /**
      * Method containing the main algorithm of each pathfinder
@@ -163,20 +165,42 @@ public abstract class Pathfinder implements Runnable {
         this.delayMillis = delayMillis;
     }
 
+    public void cancel() {
+        cancelled = true;
+    }
+
     protected void markWalked(Block block) {
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         Utils.addDelay(delayMillis);
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         block.makeWalked();
         listener.blockChanged(block, true);
     }
 
     protected void markNeighbour(Block block) {
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         Utils.addDelay(delayMillis);
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         block.makeNeighbour();
         listener.blockChanged(block, false);
     }
 
     protected void markPath(Block block) {
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         Utils.addDelay(delayMillis);
+        if (cancelled || Thread.currentThread().isInterrupted()) {
+            throw new CancellationException();
+        }
         block.makePath();
         listener.blockChanged(block, true);
     }
@@ -301,9 +325,12 @@ public abstract class Pathfinder implements Runnable {
 
     @Override
     public void run() {
-        List<Block> route = findRoute();
-        for (Block block : route) {
-            markPath(block);
+        try {
+            List<Block> route = findRoute();
+            for (Block block : route) {
+                markPath(block);
+            }
+        } catch (CancellationException ignored) {
         }
     }
 }

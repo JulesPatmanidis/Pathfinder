@@ -43,10 +43,6 @@ public class FadeRect {
         return column;
     }
 
-    public double getFadeRatio() {
-        return fadeRatio;
-    }
-
     public synchronized void incrementFadeRatio() {
         if (!inAnimation) {
             animatingRects.remove(this);

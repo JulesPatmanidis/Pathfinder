@@ -86,6 +86,8 @@ public class App {
     private JTextArea mazeInfoTextArea;
     private int clickCount = 0;
     private Pathfinder pathfinder;
+    private Thread algorithmThread;
+    private volatile int gridVersion = 0;
     private State state;
     private boolean isDrawingWall = false;
     private GridConfig gridConfig;
@@ -563,6 +565,7 @@ public class App {
      * Initializes the pathfinder and sets up the block grid and mouse listeners.
      */
     private void initPathfinder() {
+        gridVersion++;
         this.pathfinder = new AStarPathfinder();
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
@@ -740,7 +743,7 @@ public class App {
         pathfinder.setDelayMillis(paintDelay);
         pathfinder.setMoveDiagonally(allowDiagonalCheckBox.isSelected());
 
-        Thread algorithmThread = new Thread(pathfinder);
+        algorithmThread = new Thread(pathfinder);
         algorithmThread.setName("Algorithm Thread");
         algorithmThread.start();
 
@@ -773,12 +776,18 @@ public class App {
 
     private void configurePathfinderCallbacks() {
         pathfinder.setDelayMillis(paintDelay);
+        int callbackGridVersion = gridVersion;
 
         pathfinder.setGridChangeListener((block, animate) -> {
-            if (animate) {
-                centrePanel.startAnimation(block);
-            }
-            SwingUtilities.invokeLater(() -> centrePanel.repaintBlock(block));
+            SwingUtilities.invokeLater(() -> {
+                if (callbackGridVersion != gridVersion) {
+                    return;
+                }
+                if (animate) {
+                    centrePanel.startAnimation(block);
+                }
+                centrePanel.repaintBlock(block);
+            });
         });
     }
 
@@ -802,6 +811,14 @@ public class App {
      * Resets the application to its initial state, clearing the grid and reinitializing the pathfinder.
      */
     public void resetApp() {
+        if (pathfinder != null) {
+            pathfinder.cancel();
+        }
+        if (algorithmThread != null && algorithmThread.isAlive()) {
+            algorithmThread.interrupt();
+        }
+        algorithmThread = null;
+
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
@@ -815,7 +832,6 @@ public class App {
 
         centrePanel.revalidate();
     }
-
 
     private void runButtonClicked() {
         if (state == State.EDIT_MAP) {
