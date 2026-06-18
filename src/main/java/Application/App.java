@@ -389,7 +389,7 @@ public class App {
         paletteComboBox = new JComboBox<>(paletteNames);
         paletteComboBox.setMaximumSize(new Dimension(150, 35));
         paletteComboBox.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-        paletteComboBox.addActionListener(_ -> applySelectedMazePalette());
+        paletteComboBox.addActionListener(event -> applySelectedMazePalette());
         bottomControlsRow.add(paletteComboBox);
 
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -410,7 +410,7 @@ public class App {
         applyGridButton.setForeground(TEXT_COLOR);
         applyGridButton.setFocusPainted(false);
         applyGridButton.setFont(GLOBAL_FONT);
-        applyGridButton.addActionListener(_ -> applyGridSettings());
+        applyGridButton.addActionListener(event -> applyGridSettings());
         bottomControlsRow.add(applyGridButton);
 
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -420,7 +420,7 @@ public class App {
         resetButton.setBackground(ACCENT_COLOR);
         resetButton.setForeground(TEXT_COLOR);
         resetButton.setFocusPainted(false);
-        resetButton.addActionListener(_ -> resetApp());
+        resetButton.addActionListener(event -> resetApp());
         resetButton.setFont(GLOBAL_FONT);
         allowDiagonalCheckBox.setBorder(resetButton.getBorder());
 
@@ -433,7 +433,7 @@ public class App {
         runButton.setBackground(ACCENT_COLOR);
         runButton.setForeground(TEXT_COLOR);
         runButton.setFocusPainted(false);
-        runButton.addActionListener(_ -> runButtonClicked());
+        runButton.addActionListener(event -> runButtonClicked());
         runButton.setFont(GLOBAL_FONT);
         bottomControlsRow.add(runButton);
 
@@ -448,7 +448,7 @@ public class App {
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
         globalPanel.add(centrePanel, BorderLayout.CENTER);
-        fpsLabelTimer = new Timer(250, _ -> fpsLabel.setText("FPS: " + centrePanel.getCurrentFps()));
+        fpsLabelTimer = new Timer(250, event -> fpsLabel.setText("FPS: " + centrePanel.getCurrentFps()));
         fpsLabelTimer.start();
 
         // LEFT PANEL -----------------------------------------------------

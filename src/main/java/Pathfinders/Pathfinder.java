@@ -52,7 +52,7 @@ public abstract class Pathfinder implements Runnable {
     private Block end;
     private List<List<Block>> blocksList;
     private boolean moveDiagonally;
-    private GridChangeListener listener = (_, _) -> {};
+    private GridChangeListener listener = (block, animate) -> {};
     private int delayMillis;
 
     /**
@@ -239,7 +239,7 @@ public abstract class Pathfinder implements Runnable {
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
                                     Map.Entry::getValue,
-                                    (a, _) -> a,
+                                    (a, b) -> a,
                                     HashMap::new
                             ));
 
