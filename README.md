@@ -19,3 +19,7 @@ Currently implemented features:
   - Maze generation algorithms:
     - Randomized DFS
     - Randomized Prim's
+
+## Development
+
+Release instructions are in [docs/release.md](docs/release.md).
