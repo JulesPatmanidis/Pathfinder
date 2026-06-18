@@ -3,6 +3,10 @@ package Application;
 import Model.Block;
 import Model.Grid;
 import Model.GridEvent;
+import Mazes.AldousBroderMazeGenerator;
+import Mazes.MazeGenerator;
+import Mazes.RandomizedPrimsMazeGenerator;
+import Mazes.RecursiveBacktrackingMazeGenerator;
 import Pathfinders.*;
 import Utilities.Utils;
 
@@ -25,8 +29,6 @@ public class App {
     public static final String BREADTH_FIRST_SEARCH = "BreadthFirstSearch";
     public static final String DEPTH_FIRST_SEARCH = "DepthFirstSearch";
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
-    public static final String RANDOMISED_PRIMS = "Randomised Prim's";
-    public static final String RANDOMIZED_DFS = "Randomised DFS";
     public static final Color DEFAULT_BACKGROUND = new Color(18, 18, 18);
     public static final Color DEFAULT_BLOCK_COLOR = new Color(139, 139, 144);
     public static final Color DEFAULT_BLOCK_BORDER_COLOR = new Color(40, 40, 40);
@@ -54,8 +56,11 @@ public class App {
     private static final String[] ALGORITHMS =
             {A_STAR, DIJKSTRA, BEST_FIRST_SEARCH, BREADTH_FIRST_SEARCH, DEPTH_FIRST_SEARCH, WORST_FIRST_SEARCH,};
     private static final String[] algorithmInfo = new String[ALGORITHMS.length];
-    private static final String[] MAZES =
-            {RANDOMIZED_DFS, RANDOMISED_PRIMS};
+    private static final MazeGenerator[] MAZE_GENERATORS = {
+            new RecursiveBacktrackingMazeGenerator(),
+            new RandomizedPrimsMazeGenerator(),
+            new AldousBroderMazeGenerator()
+    };
 
     public static boolean isFadeChecked = true;
     public static boolean allowDiagonal = true;
@@ -82,6 +87,7 @@ public class App {
     private JTextArea mazeTitleTextArea;
     private int clickCount = 0;
     private Pathfinder pathfinder;
+    private Grid grid;
     private Thread algorithmThread;
     private volatile int gridVersion = 0;
     private State state;
@@ -495,7 +501,7 @@ public class App {
         mazeList.setAlignmentX(0f);
 
         mazeList.setBorder(listBorder);
-        mazeList.setListData(MAZES);
+        mazeList.setListData(Arrays.stream(MAZE_GENERATORS).map(MazeGenerator::getName).toArray(String[]::new));
         DefaultListCellRenderer mazeListRenderer = (DefaultListCellRenderer) mazeList.getCellRenderer();
         mazeListRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -529,7 +535,7 @@ public class App {
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
         List<List<Block>> blockList = createBlockGrid();
-        Grid grid = new Grid(blockList);
+        grid = new Grid(blockList);
 
         centrePanel.setGrid(grid, gridConfig.cellSize);
         pathfinder.setBlocksList(blockList);
@@ -770,23 +776,13 @@ public class App {
             return;
         }
         eventQueue.clear();
-        // "Hacky" way to not add delay to maze generation
-        pathfinder.setGridChangeListener(event -> {});
-        try {
-            switch (mazeList.getSelectedValue()) {
-                case RANDOMIZED_DFS:
-                    pathfinder.createDFSMaze();
-                    break;
-                case RANDOMISED_PRIMS:
-                    pathfinder.createPrimsMaze();
-                    break;
-                default:
-                    break;
-            }
-            centrePanel.refreshColors();
-        } finally {
-            configurePathfinderCallbacks();
+        int selectedIndex = mazeList.getSelectedIndex();
+        if (selectedIndex < 0 || selectedIndex >= MAZE_GENERATORS.length || grid == null) {
+            return;
         }
+
+        MAZE_GENERATORS[selectedIndex].generate(grid, event -> {});
+        centrePanel.refreshColors();
     }
 
     /**

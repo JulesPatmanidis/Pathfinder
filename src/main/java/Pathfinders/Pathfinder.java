@@ -6,8 +6,6 @@ import Model.GridEvent;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * Pathfinders.Pathfinder abstract class
@@ -36,14 +34,6 @@ public abstract class Pathfinder implements Runnable {
             List.of(1, 0),
             List.of(0, 1)
     );
-
-    public static final List<List<Integer>> MAZE_DISPLACEMENT_MATRIX = List.of(
-            List.of(-2, 0),
-            List.of(0, -2),
-            List.of(2, 0),
-            List.of(0, 2)
-    );
-
 
     /**
      * INSTANCE VARIABLES
@@ -145,14 +135,6 @@ public abstract class Pathfinder implements Runnable {
         return array;
     }
 
-    private void allBlocksAreWalls() {
-        for (List<Block> row : blocksList) {
-            for (Block block : row) {
-                markWall(block);
-            }
-        }
-    }
-
     public void setGridChangeListener(GridChangeListener listener) {
         this.listener = listener;
     }
@@ -183,124 +165,6 @@ public abstract class Pathfinder implements Runnable {
         }
         block.makePath();
         listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), true));
-    }
-
-    protected void markWall(Block block) {
-        block.makeWall();
-        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));
-    }
-
-    protected void markWalkable(Block block) {
-        block.makeWalkable();
-        listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));
-    }
-
-
-    // MAZE Generation ---------------------------------------------------------------------------------------------
-
-    public HashMap<Block, Block> getMazeNeighbours(Block parentBlock) {
-        HashMap<Block, Block> neighbours = new HashMap<>();
-        int row = parentBlock.getRow();
-        int column = parentBlock.getColumn();
-
-        for (List<Integer> vector : MAZE_DISPLACEMENT_MATRIX) {
-            int tempRow = vector.get(0) + row;
-            int tempColumn = vector.get(1) + column;
-            int pathRow = (vector.get(0) / 2) + row;
-            int pathColumn = (vector.get(1) / 2) + column;
-            if (isValidNeighbour(tempRow, tempColumn)) {
-                neighbours.put(this.getBlocks().get(tempRow).get(tempColumn)
-                        , this.getBlocks().get(pathRow).get(pathColumn)
-                );
-            }
-        }
-        return neighbours;
-    }
-
-    public void createDFSMaze() {
-        allBlocksAreWalls();
-
-        int sizeX = blocksList.getFirst().size();
-        int sizeY = blocksList.size();
-        boolean[][] visited = initializeVisited();
-
-        Stack<Block> stack = new Stack<>();
-        int randomRow = ThreadLocalRandom.current().nextInt(sizeY);
-        int randomCol = ThreadLocalRandom.current().nextInt(sizeX);
-        Block startBlock = blocksList.get(randomRow).get(randomCol);
-
-        markWalkable(startBlock);
-        visited[randomRow][randomCol] = true;
-        stack.push(startBlock);
-
-        while (!stack.isEmpty()) {
-
-            Block current = stack.peek();
-
-            Map<Block, Block> neighboursAndPaths =
-                    getMazeNeighbours(current).entrySet().stream()
-                            .filter(e -> !visited[e.getKey().getRow()][e.getKey().getColumn()])
-                            .collect(Collectors.toMap(
-                                    Map.Entry::getKey,
-                                    Map.Entry::getValue,
-                                    (a, b) -> a,
-                                    HashMap::new
-                            ));
-
-            if (!neighboursAndPaths.isEmpty()) {
-                List<Block> neighbours = new ArrayList<>(neighboursAndPaths.keySet());
-                Block randNeighbour = neighbours.get(ThreadLocalRandom.current().nextInt(neighbours.size()));
-                Block path = neighboursAndPaths.get(randNeighbour);
-
-                markWalkable(randNeighbour);
-                visited[randNeighbour.getRow()][randNeighbour.getColumn()] = true;
-
-                markWalkable(path);
-                visited[path.getRow()][path.getColumn()] = true;
-
-                stack.push(randNeighbour);
-            } else {
-                stack.pop();
-            }
-        }
-    }
-
-
-    public void createPrimsMaze() {
-        Random random = new Random();
-        allBlocksAreWalls();
-        int randRow = new Random().nextInt(blocksList.size());
-        int randCol = new Random().nextInt(blocksList.getFirst().size());
-        Block first = blocksList.get(randRow).get(randCol);
-
-        markWalked(first);
-        HashMap<Block, Block> frontierMap = (HashMap<Block, Block>) getMazeNeighbours(first).entrySet().stream()
-                .filter(map -> !map.getKey().isWalkable())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        // Choose random frontier (neighbour block) AND a random block already in the maze to connect them, currently
-        // each frontier block can only have one block in the maze (because of hashmap)
-        while (!frontierMap.isEmpty()) {
-            int randIndex = random.nextInt(frontierMap.size());
-            Block randBlock = (Block) frontierMap.keySet().toArray()[randIndex];
-
-            HashMap<Block, Block> neighbours = (HashMap<Block, Block>) getMazeNeighbours(randBlock)
-                    .entrySet().stream()
-                    .filter(map -> map.getKey().isWalkable())
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            if (!neighbours.isEmpty()) {
-                int randIndex2 = random.nextInt(neighbours.size());
-                Block randNeighbour = (Block) neighbours.keySet().toArray()[randIndex2];
-                markWalkable(neighbours.get(randNeighbour));
-                markWalkable(randBlock);
-                HashMap<Block, Block> newFrontierBlocks = (HashMap<Block, Block>) getMazeNeighbours(randBlock).entrySet().stream()
-                        .filter(map -> !map.getKey().isWalkable())
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                frontierMap.putAll(newFrontierBlocks);
-            }
-            frontierMap.remove(randBlock);
-        }
     }
 
     @Override
