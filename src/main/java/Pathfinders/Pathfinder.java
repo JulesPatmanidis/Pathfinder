@@ -122,7 +122,6 @@ public abstract class Pathfinder implements Runnable {
         Block current = block;
         while (current != null) {
             if (path.contains(current)) {
-                System.out.println("Found duplicate while reconstructing path (infinite loop)");
                 return path;
             }
             path.add(current);
@@ -152,8 +151,6 @@ public abstract class Pathfinder implements Runnable {
                 markWall(block);
             }
         }
-        System.out.println("All blocks are walls");
-        System.out.println(Thread.currentThread());
     }
 
     public void setGridChangeListener(GridChangeListener listener) {

@@ -12,7 +12,7 @@ Currently implemented features:
   - Pathfinding algorithms:
     - A star
     - Dijkstra
-    - Best Frst Search
+    - Best First Search
     - Breadth First Search
     - Depth First Search (not very useful)
     - Worst First Search (inverse of Best First Search)

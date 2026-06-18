@@ -1,6 +1,5 @@
 package Utilities;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.*;
@@ -31,14 +30,7 @@ public class Utils {
 
     public static double getAspectRatio() {
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        //System.out.println(dim.getWidth());
         return dim.getWidth() / dim.getHeight();
     }
 
-    public static Color fadeColor(Color blockColor, Color accentColor, double v) {
-        int red = (int) ((1 - v) * blockColor.getRed() + v * accentColor.getRed());
-        int green = (int) ((1 - v) * blockColor.getGreen() + v * accentColor.getGreen());
-        int blue = (int) ((1 - v) * blockColor.getBlue() + v * accentColor.getBlue());
-        return new Color(red, green, blue);
-    }
 }

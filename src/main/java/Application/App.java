@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class App {
@@ -75,14 +74,12 @@ public class App {
     private JSpinner cellSizeSpinner;
     private JButton applyGridButton;
     private JComboBox<String> paletteComboBox;
-    private JSlider delaySlider;
-    private JLabel sliderLabel;
-    private JLabel sliderValueLabel;
+    private JSlider playbackSpeedSlider;
+    private JLabel playbackSpeedLabel;
+    private JLabel playbackSpeedValueLabel;
     private JTextArea infoTextArea;
-    private JTextArea infoTitleTextArea;
     private JList<String> mazeList;
     private JTextArea mazeTitleTextArea;
-    private JTextArea mazeInfoTextArea;
     private int clickCount = 0;
     private Pathfinder pathfinder;
     private Thread algorithmThread;
@@ -96,7 +93,7 @@ public class App {
     private Timer playbackTimer;
 
 
-    private static final class MazePalette {
+    private static final class GridPalette {
         private final String name;
         private final Color background;
         private final Color blockColor;
@@ -108,7 +105,7 @@ public class App {
         private final Color neighbourColor;
         private final Color visitedColor;
 
-        private MazePalette(
+        private GridPalette(
                 String name,
                 Color background,
                 Color blockColor,
@@ -133,8 +130,8 @@ public class App {
         }
     }
 
-    private static final MazePalette[] MAZE_PALETTES = {
-            new MazePalette(
+    private static final GridPalette[] GRID_PALETTES = {
+            new GridPalette(
                     "Original",
                     new Color(0, 0, 0),
                     new Color(139, 139, 144),
@@ -146,7 +143,7 @@ public class App {
                     new Color(255, 165, 0),
                     new Color(2, 76, 71)
             ),
-            new MazePalette(
+            new GridPalette(
                     "Palette A",
                     DEFAULT_BACKGROUND,
                     new Color(237, 242, 244), // lightest (#edf2f4) -> unvisited
@@ -158,7 +155,7 @@ public class App {
                     new Color(239, 35, 60),   // #ef233c -> neighbour
                     new Color(141, 153, 174)  // #8d99ae -> visited
             ),
-            new MazePalette(
+            new GridPalette(
                     "Palette B",
                     DEFAULT_BACKGROUND,
                     new Color(239, 214, 172), // lightest (#efd6ac)
@@ -170,7 +167,7 @@ public class App {
                     new Color(196, 73, 0),    // #c44900
                     new Color(24, 58, 55)     // #183a37
             ),
-            new MazePalette(
+            new GridPalette(
                     "Palette C",
                     DEFAULT_BACKGROUND,
                     new Color(245, 245, 245), // lightest (#f5f5f5)
@@ -182,7 +179,7 @@ public class App {
                     new Color(255, 90, 95),   // #ff5a5f
                     new Color(8, 126, 139)    // #087e8b
             ),
-            new MazePalette(
+            new GridPalette(
                     "Palette D",
                     DEFAULT_BACKGROUND,
                     new Color(254, 250, 224), // lightest (#fefae0)
@@ -195,12 +192,6 @@ public class App {
                     new Color(96, 108, 56)    // #606c38
             )
     };
-    private static final Set<String> TRAVERSAL_ONLY_PALETTES = Set.of(
-            "Palette A",
-            "Palette B",
-            "Palette C",
-            "Palette D"
-    );
 
     private static final class GridConfig {
         private final int rows;
@@ -218,7 +209,6 @@ public class App {
     }
 
     public App() {
-        System.out.println("App: " + Thread.currentThread());
         try {
             List<String> algorithmInfoLines = Utils.parseAlgorithmInfo();
             for (int i = 0; i < algorithmInfo.length && i < algorithmInfoLines.size(); i++) {
@@ -226,20 +216,10 @@ public class App {
             }
         } catch (IOException e) {
             System.err.println("Algorithm info parsing failed");
-            e.printStackTrace();
         }
         gridConfig = createDefaultGridConfig();
-        long startTime = System.nanoTime();
         createUIComponents();
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
-        System.out.println("createUIComponents(): " + Math.floor(duration / 1000000f));
-
-        startTime = System.nanoTime();
         initPathfinder();
-        endTime = System.nanoTime();
-        duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
-        System.out.println("initPathfinder(): " + Math.floor(duration / 1000000f));
     }
 
 
@@ -250,14 +230,8 @@ public class App {
             frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
             frame.setContentPane(new App().globalPanel);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            long start = System.nanoTime();
             frame.pack();
-            long end = System.nanoTime();
             frame.setVisible(true);
-            long end2 = System.nanoTime();
-            System.out.println("pack(): " + (end - start) / 1000000f + "ms");
-            System.out.println("setVisible(): " + (end2 - start - (end - start)) / 1000000f + "ms");
-            System.out.println(Thread.currentThread());
         });
     }
 
@@ -318,38 +292,38 @@ public class App {
 
         bottomInfoRow.add(Box.createHorizontalGlue());
 
-        sliderLabel = new JLabel("Playback:");
-        sliderLabel.setFont(GLOBAL_FONT);
-        sliderLabel.setBackground(PANEL_COLOUR);
-        sliderLabel.setForeground(TEXT_COLOR);
-        bottomControlsRow.add(sliderLabel);
+        playbackSpeedLabel = new JLabel("Playback:");
+        playbackSpeedLabel.setFont(GLOBAL_FONT);
+        playbackSpeedLabel.setBackground(PANEL_COLOUR);
+        playbackSpeedLabel.setForeground(TEXT_COLOR);
+        bottomControlsRow.add(playbackSpeedLabel);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
-        sliderValueLabel = new JLabel();
-        sliderValueLabel.setFont(GLOBAL_FONT);
-        sliderValueLabel.setBackground(PANEL_COLOUR);
-        sliderValueLabel.setForeground(TEXT_COLOR);
-        sliderValueLabel.setPreferredSize(new Dimension(120, 40));
-        sliderValueLabel.setMinimumSize(new Dimension(120, 40));
+        playbackSpeedValueLabel = new JLabel();
+        playbackSpeedValueLabel.setFont(GLOBAL_FONT);
+        playbackSpeedValueLabel.setBackground(PANEL_COLOUR);
+        playbackSpeedValueLabel.setForeground(TEXT_COLOR);
+        playbackSpeedValueLabel.setPreferredSize(new Dimension(120, 40));
+        playbackSpeedValueLabel.setMinimumSize(new Dimension(120, 40));
 
-        bottomControlsRow.add(sliderValueLabel);
+        bottomControlsRow.add(playbackSpeedValueLabel);
 
         //bottomPanel.add(Box.createRigidArea(new Dimension(10,0)));
 
-        delaySlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
-        delaySlider.setSnapToTicks(false);
-        delaySlider.setFont(GLOBAL_FONT);
-        delaySlider.setBackground(BLOCK_BORDER_COLOR);
-        delaySlider.setForeground(TEXT_COLOR);
-        delaySlider.setMaximumSize(new Dimension(150, 35));
-        delaySlider.setToolTipText("Playback speed");
+        playbackSpeedSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+        playbackSpeedSlider.setSnapToTicks(false);
+        playbackSpeedSlider.setFont(GLOBAL_FONT);
+        playbackSpeedSlider.setBackground(BLOCK_BORDER_COLOR);
+        playbackSpeedSlider.setForeground(TEXT_COLOR);
+        playbackSpeedSlider.setMaximumSize(new Dimension(150, 35));
+        playbackSpeedSlider.setToolTipText("Playback speed");
 
-        delaySlider.addChangeListener(changeEvent -> {
+        playbackSpeedSlider.addChangeListener(changeEvent -> {
             updatePlaybackSpeedLabel();
         });
 
         updatePlaybackSpeedLabel();
-        bottomControlsRow.add(delaySlider);
+        bottomControlsRow.add(playbackSpeedSlider);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
 
         allowDiagonalCheckBox = new JCheckBox();
@@ -388,11 +362,11 @@ public class App {
         bottomControlsRow.add(paletteLabel);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(6, 0)));
 
-        String[] paletteNames = Arrays.stream(MAZE_PALETTES).map(p -> p.name).toArray(String[]::new);
+        String[] paletteNames = Arrays.stream(GRID_PALETTES).map(p -> p.name).toArray(String[]::new);
         paletteComboBox = new JComboBox<>(paletteNames);
         paletteComboBox.setMaximumSize(new Dimension(150, 35));
         paletteComboBox.setFont(new Font("Times New Roman", Font.PLAIN, 16));
-        paletteComboBox.addActionListener(event -> applySelectedMazePalette());
+        paletteComboBox.addActionListener(event -> applySelectedPalette());
         bottomControlsRow.add(paletteComboBox);
 
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -532,27 +506,7 @@ public class App {
         mazeList.setBackground(PANEL_COLOUR);
         mazeList.setSelectionBackground(PATH_COLOR);
         mazeList.setFont(GLOBAL_FONT);
-        mazeList.addListSelectionListener(e -> {
-            JList<String> list = (JList<String>) e.getSource();
-            int selected = list.getSelectedIndex();
-            mazeInfoTextArea.setText(algorithmInfo[selected]);
-        });
-
         leftPanel.add(mazeList);
-
-        mazeInfoTextArea = new JTextArea();
-        mazeInfoTextArea.setAlignmentX(0f);
-        mazeInfoTextArea.setPreferredSize(new Dimension(leftPanelWidth, 260));
-        mazeInfoTextArea.setMaximumSize(mazeInfoTextArea.getPreferredSize());
-        mazeInfoTextArea.setBorder(emptyBorder10);
-        mazeInfoTextArea.setBackground(PANEL_COLOUR);
-        mazeInfoTextArea.setForeground(TEXT_COLOR);
-        mazeInfoTextArea.setLineWrap(true);
-        mazeInfoTextArea.setWrapStyleWord(true);
-        mazeInfoTextArea.setEditable(false);
-        mazeInfoTextArea.setText(algorithmInfo[0]);
-        mazeInfoTextArea.setFont(GLOBAL_FONT);
-        //leftPanel.add(mazeInfoTextArea);
 
         // GENERAL ------------------------------------------------------------------
 
@@ -586,7 +540,6 @@ public class App {
         globalPanel.getActionMap().put("mAction", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("actionPerformed: " + Thread.currentThread());
                 selectMaze();
             }
         });
@@ -619,7 +572,7 @@ public class App {
     }
 
     private int getEventsPerFrame() {
-        int value = delaySlider.getValue();
+        int value = playbackSpeedSlider.getValue();
         double t = value / 100.0;
         double maxEventsPerFrame = 10_000.0;
         double minEventsPerFrame = 1.0;
@@ -627,7 +580,7 @@ public class App {
     }
 
     private void updatePlaybackSpeedLabel() {
-        sliderValueLabel.setText(getEventsPerFrame() + "/frame");
+        playbackSpeedValueLabel.setText(getEventsPerFrame() + "/frame");
     }
 
 
@@ -651,7 +604,6 @@ public class App {
         centrePanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // System.out.println("centrePanel clicked at: " + e.getPoint());
                 int col = centrePanel.getColumnAtX(e.getX());
                 int row = centrePanel.getRowAtY(e.getY());
 
@@ -699,10 +651,8 @@ public class App {
                 state = State.RUN;
                 break;
             case RUN:
-                System.out.println("State cannot be updated from here (RUN)");
                 break;
             default:
-                System.out.println("State is invalid");
                 break;
         }
     }
@@ -882,36 +832,25 @@ public class App {
         resetApp();
     }
 
-    private void applySelectedMazePalette() {
+    private void applySelectedPalette() {
         if (paletteComboBox == null) {
             return;
         }
         int selectedIndex = paletteComboBox.getSelectedIndex();
-        if (selectedIndex < 0 || selectedIndex >= MAZE_PALETTES.length) {
+        if (selectedIndex < 0 || selectedIndex >= GRID_PALETTES.length) {
             return;
         }
-        MazePalette palette = MAZE_PALETTES[selectedIndex];
-        if (TRAVERSAL_ONLY_PALETTES.contains(palette.name)) {
-            BACKGROUND = DEFAULT_BACKGROUND;
-            BLOCK_COLOR = palette.blockColor;
-            BLOCK_BORDER_COLOR = DEFAULT_BLOCK_BORDER_COLOR;
-            PRESSED_COLOR = DEFAULT_PRESSED_COLOR;
-            OBSTACLE_COLOR = palette.obstacleColor;
-            PATH_COLOR = DEFAULT_PATH_COLOR;
-            ACCENT_COLOR = DEFAULT_ACCENT_COLOR;
-            NEIGHBOUR_COLOR = palette.neighbourColor;
-            VISITED_COLOR = palette.visitedColor;
-        } else {
-            BACKGROUND = palette.background;
-            BLOCK_COLOR = palette.blockColor;
-            BLOCK_BORDER_COLOR = palette.blockBorderColor;
-            PRESSED_COLOR = DEFAULT_PRESSED_COLOR;
-            OBSTACLE_COLOR = palette.obstacleColor;
-            PATH_COLOR = palette.pathColor;
-            ACCENT_COLOR = palette.accentColor;
-            NEIGHBOUR_COLOR = palette.neighbourColor;
-            VISITED_COLOR = palette.visitedColor;
-        }
+        GridPalette palette = GRID_PALETTES[selectedIndex];
+        BACKGROUND = palette.background;
+        BLOCK_COLOR = palette.blockColor;
+        BLOCK_BORDER_COLOR = palette.blockBorderColor;
+        PRESSED_COLOR = palette.startEndColor;
+        OBSTACLE_COLOR = palette.obstacleColor;
+        PATH_COLOR = palette.pathColor;
+        ACCENT_COLOR = palette.accentColor;
+        NEIGHBOUR_COLOR = palette.neighbourColor;
+        VISITED_COLOR = palette.visitedColor;
+
         if (centrePanel != null) {
             centrePanel.setBackground(BACKGROUND);
             centrePanel.refreshColors();
