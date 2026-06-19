@@ -172,17 +172,16 @@ public class GridView extends JPanel {
             }
         }
 
-        boolean drawBorders = cellSize > 8;
+        boolean drawBorders = cellSize > 6;
+        Color borderColor = new Color(
+                App.BLOCK_BORDER_COLOR.getRed(),
+                App.BLOCK_BORDER_COLOR.getGreen(),
+                App.BLOCK_BORDER_COLOR.getBlue(),
+                160
+        );
 
         if (drawBorders) {
-            g.setColor(App.BLOCK_BORDER_COLOR);
-            for (int row = startRow; row <= endRow; row++) {
-                int y = originY + row * cellSize;
-                for (int col = startCol; col <= endCol; col++) {
-                    int x = originX + col * cellSize;
-                    g.drawRect(x, y, cellSize - 1, cellSize - 1);
-                }
-            }
+            drawGridLines(g, borderColor, originX, originY, startRow, endRow, startCol, endCol);
         }
 
         if (App.isFadeChecked) {
@@ -194,11 +193,40 @@ public class GridView extends JPanel {
                 int y = originY + cellAnimation.getRow() * cellSize;
                 g.setColor(cellAnimation.getCurrentColor());
                 fillCell(g, x, y, cellAnimation.getScale());
-                g.setColor(App.BLOCK_BORDER_COLOR);
+                g.setColor(borderColor);
+
                 if (drawBorders) {
                     drawCellBorder(g, x, y, cellAnimation.getScale());
                 }
             }
+        }
+    }
+
+    private void drawGridLines(
+            Graphics g,
+            Color borderColor,
+            int originX,
+            int originY,
+            int startRow,
+            int endRow,
+            int startCol,
+            int endCol
+    ) {
+        g.setColor(borderColor);
+
+        int startX = originX + startCol * cellSize;
+        int endX = originX + (endCol + 1) * cellSize;
+        int startY = originY + startRow * cellSize;
+        int endY = originY + (endRow + 1) * cellSize;
+
+        for (int col = startCol; col <= endCol + 1; col++) {
+            int x = originX + col * cellSize;
+            g.drawLine(x, startY, x, endY);
+        }
+
+        for (int row = startRow; row <= endRow + 1; row++) {
+            int y = originY + row * cellSize;
+            g.drawLine(startX, y, endX, y);
         }
     }
 
