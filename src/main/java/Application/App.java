@@ -21,8 +21,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class App {
-    private static final int DEFAULT_GRID_ROWS = 80;
-    private static final int DEFAULT_CELL_SIZE = 18;
+    private static final int DEFAULT_CELL_SIZE = 10;
+    private static final int MIN_GRID_ROWS = 1;
+    private static final int MIN_GRID_COLUMNS = 5;
     public static final String A_STAR = "A-Star";
     public static final String DIJKSTRA = "Dijkstra";
     public static final String BEST_FIRST_SEARCH = "BestFirstSearch";
@@ -31,7 +32,7 @@ public class App {
     public static final String WORST_FIRST_SEARCH = "WorstFirstSearch";
     public static final Color DEFAULT_BACKGROUND = new Color(18, 18, 18);
     public static final Color DEFAULT_BLOCK_COLOR = new Color(139, 139, 144);
-    public static final Color DEFAULT_BLOCK_BORDER_COLOR = new Color(40, 40, 40);
+    public static final Color DEFAULT_BLOCK_BORDER_COLOR = new Color(55, 55, 55);
     public static final Color TEXT_COLOR = new Color(211, 211, 211);
     public static final Color DEFAULT_PRESSED_COLOR = new Color(139, 0, 0);
     public static final Color DEFAULT_OBSTACLE_COLOR = new Color(40, 40, 40);
@@ -97,107 +98,150 @@ public class App {
 
     private final java.util.Queue<QueuedGridEvent> eventQueue = new ConcurrentLinkedQueue<>();
     private Timer playbackTimer;
-
-
-    private static final class GridPalette {
-        private final String name;
-        private final Color background;
-        private final Color blockColor;
-        private final Color blockBorderColor;
-        private final Color startEndColor;
-        private final Color obstacleColor;
-        private final Color pathColor;
-        private final Color accentColor;
-        private final Color neighbourColor;
-        private final Color visitedColor;
-
-        private GridPalette(
-                String name,
-                Color background,
-                Color blockColor,
-                Color blockBorderColor,
-                Color startEndColor,
-                Color obstacleColor,
-                Color pathColor,
-                Color accentColor,
-                Color neighbourColor,
-                Color visitedColor
-        ) {
-            this.name = name;
-            this.background = background;
-            this.blockColor = blockColor;
-            this.blockBorderColor = blockBorderColor;
-            this.startEndColor = startEndColor;
-            this.obstacleColor = obstacleColor;
-            this.pathColor = pathColor;
-            this.accentColor = accentColor;
-            this.neighbourColor = neighbourColor;
-            this.visitedColor = visitedColor;
-        }
+    
+    private record AppTheme(String name, Color appBackground, Color panelBackground, Color controlBackground,
+                            Color controlText, Color mutedText, Color listSelection, Color gridBackground,
+                            Color blockColor, Color blockBorderColor, Color startEndColor, Color obstacleColor,
+                            Color pathColor, Color accentColor, Color neighbourColor, Color visitedColor) {
     }
 
-    private static final GridPalette[] GRID_PALETTES = {
-            new GridPalette(
-                    "Original",
-                    DEFAULT_BACKGROUND,
-                    new Color(139, 139, 144),
-                    new Color(40, 40, 40),
-                    new Color(139, 0, 0),
-                    new Color(40, 40, 40),
-                    new Color(229, 61, 61),
-                    new Color(2, 76, 71),
-                    new Color(255, 165, 0),
-                    new Color(2, 76, 71)
-            ),
-            new GridPalette(
-                    "Palette A",
-                    DEFAULT_BACKGROUND,
-                    new Color(237, 242, 244), // lightest (#edf2f4) -> unvisited
-                    DEFAULT_BLOCK_BORDER_COLOR,
-                    DEFAULT_PRESSED_COLOR,
-                    new Color(43, 45, 66),    // darkest (#2b2d42) -> obstacles
-                    DEFAULT_PATH_COLOR,
-                    DEFAULT_ACCENT_COLOR,
-                    new Color(239, 35, 60),   // #ef233c -> neighbour
-                    new Color(141, 153, 174)  // #8d99ae -> visited
-            ),
-            new GridPalette(
-                    "Palette B",
-                    DEFAULT_BACKGROUND,
-                    new Color(239, 214, 172), // lightest (#efd6ac)
-                    DEFAULT_BLOCK_BORDER_COLOR,
-                    DEFAULT_PRESSED_COLOR,
-                    new Color(4, 21, 31),     // darkest (#04151f)
-                    DEFAULT_PATH_COLOR,
-                    DEFAULT_ACCENT_COLOR,
-                    new Color(196, 73, 0),    // #c44900
-                    new Color(24, 58, 55)     // #183a37
-            ),
-            new GridPalette(
-                    "Palette C",
-                    DEFAULT_BACKGROUND,
-                    new Color(245, 245, 245), // lightest (#f5f5f5)
-                    DEFAULT_BLOCK_BORDER_COLOR,
-                    DEFAULT_PRESSED_COLOR,
-                    new Color(60, 60, 60),    // darkest (#3c3c3c)
-                    DEFAULT_PATH_COLOR,
-                    DEFAULT_ACCENT_COLOR,
-                    new Color(255, 90, 95),   // #ff5a5f
-                    new Color(8, 126, 139)    // #087e8b
-            ),
-            new GridPalette(
-                    "Palette D",
-                    DEFAULT_BACKGROUND,
-                    new Color(254, 250, 224), // lightest (#fefae0)
-                    DEFAULT_BLOCK_BORDER_COLOR,
-                    DEFAULT_PRESSED_COLOR,
-                    new Color(40, 54, 24),    // darkest (#283618)
-                    DEFAULT_PATH_COLOR,
-                    DEFAULT_ACCENT_COLOR,
-                    new Color(221, 161, 94),  // #dda15e
-                    new Color(96, 108, 56)    // #606c38
-            )
+    private static final AppTheme[] APP_THEMES = {
+            classicTheme(),
+            craitTheme(),
+            slateTheme(),
+            futureTheme(),
+            aztecTheme()
     };
+
+    private static AppTheme classicTheme() {
+        Color appBackground = DEFAULT_BACKGROUND;
+        Color panelBackground = PANEL_COLOUR;
+        Color controlBackground = DEFAULT_ACCENT_COLOR;
+        Color controlText = TEXT_COLOR;
+        Color mutedText = new Color(184, 184, 184);
+        Color listSelection = DEFAULT_PATH_COLOR;
+
+        Color gridBackground = DEFAULT_BACKGROUND;
+        Color blockColor = new Color(139, 139, 144);
+        Color blockBorderColor = new Color(40, 40, 40);
+        Color startEndColor = new Color(139, 0, 0);
+        Color obstacleColor = new Color(40, 40, 40);
+        Color pathColor = new Color(229, 61, 61);
+        Color accentColor = new Color(2, 76, 71);
+        Color neighbourColor = new Color(255, 165, 0);
+        Color visitedColor = new Color(2, 76, 71);
+
+        return new AppTheme(
+                "Classic",
+                appBackground, panelBackground, controlBackground, controlText, mutedText, listSelection,
+                gridBackground, blockColor, blockBorderColor, startEndColor, obstacleColor, pathColor,
+                accentColor, neighbourColor, visitedColor
+        );
+    }
+
+    private static AppTheme craitTheme() {
+        Color appBackground = new Color(16, 17, 19);
+        Color panelBackground = new Color(31, 33, 38);
+        Color controlBackground = new Color(70, 28, 34);
+        Color controlText = new Color(245, 242, 235);
+        Color mutedText = new Color(190, 194, 198);
+        Color listSelection = new Color(181, 24, 39);
+
+        Color gridBackground = new Color(16, 17, 19);
+        Color blockColor = new Color(228, 230, 238);
+        Color blockBorderColor = new Color(52, 54, 58);
+        Color startEndColor = new Color(92, 13, 24);
+        Color obstacleColor = new Color(29, 31, 35);
+        Color pathColor = new Color(204, 25, 38);
+        Color accentColor = new Color(70, 28, 34);
+        Color neighbourColor = new Color(204, 25, 38);
+        Color visitedColor = new Color(186, 193, 207);
+
+        return new AppTheme(
+                "Crait",
+                appBackground, panelBackground, controlBackground, controlText, mutedText, listSelection,
+                gridBackground, blockColor, blockBorderColor, startEndColor, obstacleColor, pathColor,
+                accentColor, neighbourColor, visitedColor
+        );
+    }
+
+    private static AppTheme slateTheme() {
+        Color appBackground = DEFAULT_BACKGROUND;
+        Color panelBackground = new Color(27, 42, 46);
+        Color controlBackground = new Color(24, 58, 55);
+        Color controlText = new Color(239, 214, 172);
+        Color mutedText = new Color(198, 177, 142);
+        Color listSelection = new Color(196, 73, 0);
+
+        Color gridBackground = DEFAULT_BACKGROUND;
+        Color blockColor = new Color(239, 214, 172);
+        Color blockBorderColor = DEFAULT_BLOCK_BORDER_COLOR;
+        Color startEndColor = DEFAULT_PRESSED_COLOR;
+        Color obstacleColor = new Color(4, 21, 31);
+        Color pathColor = new Color(238, 137, 53);
+        Color accentColor = DEFAULT_ACCENT_COLOR;
+        Color neighbourColor = new Color(196, 73, 0);
+        Color visitedColor = new Color(24, 58, 55);
+
+        return new AppTheme(
+                "Slate",
+                appBackground, panelBackground, controlBackground, controlText, mutedText, listSelection,
+                gridBackground, blockColor, blockBorderColor, startEndColor, obstacleColor, pathColor,
+                accentColor, neighbourColor, visitedColor
+        );
+    }
+
+    private static AppTheme futureTheme() {
+        Color appBackground = DEFAULT_BACKGROUND;
+        Color panelBackground = new Color(28, 36, 39);
+        Color controlBackground = new Color(8, 126, 139);
+        Color controlText = new Color(245, 245, 245);
+        Color mutedText = new Color(196, 207, 209);
+        Color listSelection = new Color(255, 90, 95);
+
+        Color gridBackground = DEFAULT_BACKGROUND;
+        Color blockColor = new Color(245, 245, 245);
+        Color blockBorderColor = DEFAULT_BLOCK_BORDER_COLOR;
+        Color startEndColor = DEFAULT_PRESSED_COLOR;
+        Color obstacleColor = new Color(60, 60, 60);
+        Color pathColor = new Color(255, 214, 10);
+        Color accentColor = DEFAULT_ACCENT_COLOR;
+        Color neighbourColor = new Color(255, 90, 95);
+        Color visitedColor = new Color(8, 126, 139);
+
+        return new AppTheme(
+                "Future",
+                appBackground, panelBackground, controlBackground, controlText, mutedText, listSelection,
+                gridBackground, blockColor, blockBorderColor, startEndColor, obstacleColor, pathColor,
+                accentColor, neighbourColor, visitedColor
+        );
+    }
+
+    private static AppTheme aztecTheme() {
+        Color appBackground = DEFAULT_BACKGROUND;
+        Color panelBackground = new Color(31, 41, 24);
+        Color controlBackground = new Color(96, 108, 56);
+        Color controlText = new Color(254, 250, 224);
+        Color mutedText = new Color(216, 207, 171);
+        Color listSelection = new Color(221, 161, 94);
+
+        Color gridBackground = DEFAULT_BACKGROUND;
+        Color blockColor = new Color(158, 155, 134);
+        Color blockBorderColor = DEFAULT_BLOCK_BORDER_COLOR;
+        Color startEndColor = DEFAULT_PRESSED_COLOR;
+        Color obstacleColor = new Color(40, 54, 24);
+        Color pathColor = new Color(255, 198, 55);
+        Color accentColor = DEFAULT_ACCENT_COLOR;
+        Color neighbourColor = new Color(221, 161, 94);
+        Color visitedColor = new Color(96, 108, 56);
+
+        return new AppTheme(
+                "Aztec",
+                appBackground, panelBackground, controlBackground, controlText, mutedText, listSelection,
+                gridBackground, blockColor, blockBorderColor, startEndColor, obstacleColor, pathColor,
+                accentColor, neighbourColor, visitedColor
+        );
+    }
 
     private static final class GridConfig {
         private final int rows;
@@ -231,12 +275,13 @@ public class App {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+            App app = new App();
             JFrame frame = new JFrame(FRAME_TITLE);
             frame.setResizable(true);
-            frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-            frame.setContentPane(new App().globalPanel);
+            frame.setContentPane(app.globalPanel);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.pack();
+            frame.setBounds(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
+            frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
             frame.setVisible(true);
         });
     }
@@ -368,11 +413,11 @@ public class App {
         bottomControlsRow.add(paletteLabel);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(6, 0)));
 
-        String[] paletteNames = Arrays.stream(GRID_PALETTES).map(p -> p.name).toArray(String[]::new);
+        String[] paletteNames = Arrays.stream(APP_THEMES).map(theme -> theme.name).toArray(String[]::new);
         paletteComboBox = new JComboBox<>(paletteNames);
         paletteComboBox.setMaximumSize(new Dimension(150, 35));
         paletteComboBox.setFont(new Font("Sans Serif", Font.PLAIN, 16));
-        paletteComboBox.addActionListener(event -> applySelectedPalette());
+        paletteComboBox.addActionListener(event -> applySelectedTheme());
         bottomControlsRow.add(paletteComboBox);
 
         bottomControlsRow.add(Box.createRigidArea(new Dimension(10, 0)));
@@ -429,6 +474,12 @@ public class App {
         centrePanel = new GridView();//JPanel();
         centrePanel.setBorder(MAIN_BORDER);
         centrePanel.setBackground(BACKGROUND);
+        centrePanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent event) {
+                applyGridSettingsFromResize();
+            }
+        });
         globalPanel.add(centrePanel, BorderLayout.CENTER);
         fpsLabelTimer = new Timer(250, event -> fpsLabel.setText("FPS: " + centrePanel.getCurrentFps()));
         fpsLabelTimer.start();
@@ -521,6 +572,7 @@ public class App {
         im.put(KeyStroke.getKeyStroke("pressed SPACE"), "none");
         im.put(KeyStroke.getKeyStroke("released SPACE"), "none");
         state = State.INITIALISE;
+        applySelectedTheme();
 
     }
 
@@ -820,9 +872,7 @@ public class App {
     }
 
     private GridConfig createDefaultGridConfig() {
-        int rows = DEFAULT_GRID_ROWS;
-        int cols = Math.max(5, (int) Math.round(rows * Utils.getAspectRatio()));
-        return new GridConfig(rows, cols, DEFAULT_CELL_SIZE);
+        return new GridConfig(MIN_GRID_ROWS, MIN_GRID_COLUMNS, DEFAULT_CELL_SIZE);
     }
 
     private void applyGridSettings() {
@@ -836,36 +886,122 @@ public class App {
         resetApp();
     }
 
-    private void applySelectedPalette() {
+    private void applyGridSettingsFromResize() {
+        if (cellSizeSpinner == null || clickCount > 0 || state == State.RUN) {
+            return;
+        }
+        applyGridSettings();
+    }
+
+    private void applySelectedTheme() {
         if (paletteComboBox == null) {
             return;
         }
         int selectedIndex = paletteComboBox.getSelectedIndex();
-        if (selectedIndex < 0 || selectedIndex >= GRID_PALETTES.length) {
+        if (selectedIndex < 0 || selectedIndex >= APP_THEMES.length) {
             return;
         }
-        GridPalette palette = GRID_PALETTES[selectedIndex];
-        BACKGROUND = palette.background;
-        BLOCK_COLOR = palette.blockColor;
-        BLOCK_BORDER_COLOR = palette.blockBorderColor;
-        PRESSED_COLOR = palette.startEndColor;
-        OBSTACLE_COLOR = palette.obstacleColor;
-        PATH_COLOR = palette.pathColor;
-        ACCENT_COLOR = palette.accentColor;
-        NEIGHBOUR_COLOR = palette.neighbourColor;
-        VISITED_COLOR = palette.visitedColor;
+        applyTheme(APP_THEMES[selectedIndex]);
+    }
+
+    private void applyTheme(AppTheme theme) {
+        BACKGROUND = theme.gridBackground;
+        BLOCK_COLOR = theme.blockColor;
+        BLOCK_BORDER_COLOR = theme.blockBorderColor;
+        PRESSED_COLOR = theme.startEndColor;
+        OBSTACLE_COLOR = theme.obstacleColor;
+        PATH_COLOR = theme.pathColor;
+        ACCENT_COLOR = theme.accentColor;
+        NEIGHBOUR_COLOR = theme.neighbourColor;
+        VISITED_COLOR = theme.visitedColor;
+
+        if (globalPanel != null) {
+            styleComponent(globalPanel, theme);
+            if (leftPanel != null) {
+                leftPanel.setBorder(BorderFactory.createLineBorder(theme.gridBackground, 4));
+            }
+            globalPanel.repaint();
+        }
 
         if (centrePanel != null) {
-            centrePanel.setBackground(BACKGROUND);
             centrePanel.refreshColors();
         }
     }
 
+    private void styleComponent(Component component, AppTheme theme) {
+        if (component == globalPanel) {
+            component.setBackground(theme.appBackground);
+        } else if (component instanceof GridView) {
+            component.setBackground(theme.gridBackground);
+        } else if (component instanceof JButton button) {
+            styleButton(button, theme);
+        } else if (component instanceof JCheckBox checkBox) {
+            styleCheckBox(checkBox, theme);
+        } else if (component instanceof JList<?> list) {
+            styleList(list, theme);
+        } else if (component instanceof JTextArea textArea) {
+            styleTextArea(textArea, theme);
+        } else if (component instanceof javax.swing.text.JTextComponent textComponent) {
+            textComponent.setBackground(theme.controlBackground);
+            textComponent.setForeground(theme.controlText);
+            textComponent.setCaretColor(theme.controlText);
+        } else if (component instanceof JLabel label) {
+            label.setForeground(theme.controlText);
+            label.setBackground(theme.panelBackground);
+        } else if (component instanceof JSlider slider) {
+            slider.setBackground(theme.panelBackground);
+            slider.setForeground(theme.controlText);
+        } else if (component instanceof JComboBox<?> comboBox) {
+            comboBox.setBackground(theme.controlBackground);
+            comboBox.setForeground(theme.controlText);
+        } else if (component instanceof JSpinner spinner) {
+            spinner.setBackground(theme.controlBackground);
+            spinner.setForeground(theme.controlText);
+            JComponent editor = spinner.getEditor();
+            editor.setBackground(theme.controlBackground);
+            editor.setForeground(theme.controlText);
+            styleComponent(editor, theme);
+        } else if (component instanceof JPanel panel) {
+            panel.setBackground(theme.panelBackground);
+        }
+
+        if (component instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                styleComponent(child, theme);
+            }
+        }
+    }
+
+    private void styleButton(JButton button, AppTheme theme) {
+        button.setBackground(theme.controlBackground);
+        button.setForeground(theme.controlText);
+        button.setFocusPainted(false);
+    }
+
+    private void styleCheckBox(JCheckBox checkBox, AppTheme theme) {
+        checkBox.setBackground(theme.controlBackground);
+        checkBox.setForeground(theme.controlText);
+        checkBox.setFocusPainted(false);
+    }
+
+    private void styleList(JList<?> list, AppTheme theme) {
+        Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+        Border innerBorder = BorderFactory.createLineBorder(theme.controlText, 4);
+        list.setBorder(BorderFactory.createCompoundBorder(emptyBorder, innerBorder));
+        list.setBackground(theme.panelBackground);
+        list.setForeground(theme.mutedText);
+        list.setSelectionBackground(theme.listSelection);
+        list.setSelectionForeground(theme.controlText);
+    }
+
+    private void styleTextArea(JTextArea textArea, AppTheme theme) {
+        textArea.setBackground(theme.panelBackground);
+        textArea.setForeground(theme.controlText);
+    }
+
     private GridConfig createGridConfigForPane(int cellSize) {
         if (centrePanel == null) {
-            int rows = DEFAULT_GRID_ROWS;
-            int cols = Math.max(5, (int) Math.round(rows * Utils.getAspectRatio()));
-            return new GridConfig(rows, cols, cellSize);
+            return new GridConfig(MIN_GRID_ROWS, MIN_GRID_COLUMNS, cellSize);
         }
 
         Insets insets = centrePanel.getInsets();
@@ -876,8 +1012,8 @@ public class App {
             return new GridConfig(gridConfig.rows, gridConfig.cols, cellSize);
         }
 
-        int rows = Math.max(1, usableHeight / cellSize);
-        int cols = Math.max(1, usableWidth / cellSize);
+        int rows = Math.max(MIN_GRID_ROWS, usableHeight / cellSize);
+        int cols = Math.max(MIN_GRID_COLUMNS, usableWidth / cellSize);
         return new GridConfig(rows, cols, cellSize);
     }
 
