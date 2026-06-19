@@ -22,6 +22,7 @@ public class CellAnimation {
     private Color animationEndColor = App.BLOCK_COLOR;
     private Color currentColor = App.BLOCK_COLOR;
     private double scale = 1.0;
+    private boolean queuedForAnimation = false;
 
 
     public CellAnimation(int row, int column) {
@@ -84,6 +85,14 @@ public class CellAnimation {
 
     public double getScale() {
         return scale;
+    }
+
+    public boolean isQueuedForAnimation() {
+        return queuedForAnimation;
+    }
+
+    public void setQueuedForAnimation(boolean queuedForAnimation) {
+        this.queuedForAnimation = queuedForAnimation;
     }
 
     public void startFadeAnimation(Color targetColor) {

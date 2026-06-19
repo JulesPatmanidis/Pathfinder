@@ -6,13 +6,13 @@ import Model.Grid;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 
 public class GridView extends JPanel {
 
-    private final Set<CellAnimation> animatingCells = new LinkedHashSet<>();
+    private final List<CellAnimation> animatingCells = new ArrayList<>();
     private final Timer repaintTimer = new Timer(16, event -> {
         updateFpsCounter();
         Iterator<CellAnimation> iterator = animatingCells.iterator();
@@ -23,6 +23,7 @@ public class GridView extends JPanel {
             paintCellToBuffer(cellAnimation.getRow(), cellAnimation.getColumn());
             repaintCell(cellAnimation.getRow(), cellAnimation.getColumn());
             if (!stillAnimating) {
+                cellAnimation.setQueuedForAnimation(false);
                 iterator.remove();
             }
         }
@@ -36,6 +37,11 @@ public class GridView extends JPanel {
     private long fpsWindowStartNanos = System.nanoTime();
     private int timerTicksInWindow = 0;
     private int currentFps = 0;
+    private Color borderColor = new Color(
+            App.BLOCK_BORDER_COLOR.getRed(),
+            App.BLOCK_BORDER_COLOR.getGreen(),
+            App.BLOCK_BORDER_COLOR.getBlue(),
+            160);
 
     public GridView() {
         super();
@@ -46,6 +52,10 @@ public class GridView extends JPanel {
         this.grid = grid;
         this.cellSize = cellSize;
         this.cellAnimations = createCellAnimations(grid);
+        refreshBorderColor();
+        for (CellAnimation cellAnimation : animatingCells) {
+            cellAnimation.setQueuedForAnimation(false);
+        }
         animatingCells.clear();
         if (gridGraphics != null) {
             gridGraphics.dispose();
@@ -76,17 +86,27 @@ public class GridView extends JPanel {
 
         if (animate && App.isFadeChecked && state == BlockState.PATH) {
             cellAnimation.startPathAnimation(targetColor);
-            animatingCells.add(cellAnimation);
+            queueAnimation(cellAnimation);
         } else if (animate && App.isFadeChecked) {
             cellAnimation.startFadeAnimation(targetColor);
-            animatingCells.add(cellAnimation);
+            queueAnimation(cellAnimation);
         } else {
             cellAnimation.setCurrentColor(targetColor);
-            animatingCells.remove(cellAnimation);
+            if (cellAnimation.isQueuedForAnimation()) {
+                cellAnimation.setQueuedForAnimation(false);
+                animatingCells.remove(cellAnimation);
+            }
         }
 
         paintCellToBuffer(row, col);
         repaintCell(row, col);
+    }
+
+    private void queueAnimation(CellAnimation cellAnimation) {
+        if (!cellAnimation.isQueuedForAnimation()) {
+            cellAnimation.setQueuedForAnimation(true);
+            animatingCells.add(cellAnimation);
+        }
     }
 
     public void refreshColors() {
@@ -94,6 +114,10 @@ public class GridView extends JPanel {
             return;
         }
 
+        refreshBorderColor();
+        for (CellAnimation cellAnimation : animatingCells) {
+            cellAnimation.setQueuedForAnimation(false);
+        }
         animatingCells.clear();
         for (int row = 0; row < grid.getRows(); row++) {
             for (int col = 0; col < grid.getColumns(); col++) {
@@ -128,7 +152,9 @@ public class GridView extends JPanel {
             return -1;
         }
 
-        int relativeX = x - getGridOriginX();
+        Insets insets = getInsets();
+
+        int relativeX = x - getGridOriginX(insets);
         if (relativeX < 0 || relativeX >= getGridPixelWidth()) {
             return -1;
         }
@@ -140,7 +166,9 @@ public class GridView extends JPanel {
             return -1;
         }
 
-        int relativeY = y - getGridOriginY();
+        Insets insets = getInsets();
+
+        int relativeY = y - getGridOriginY(insets);
         if (relativeY < 0 || relativeY >= getGridPixelHeight()) {
             return -1;
         }
@@ -216,19 +244,21 @@ public class GridView extends JPanel {
             return;
         }
 
-        g.drawImage(gridImage, getGridOriginX(), getGridOriginY(), null);
-        paintScaleAnimations(g);
+        Insets insets = getInsets();
+        int originX = getGridOriginX(insets);
+        int originY = getGridOriginY(insets);
+
+        g.drawImage(gridImage, originX, originY, null);
+        paintScaleAnimations(g, originX, originY);
     }
 
-    private void paintScaleAnimations(Graphics g) {
+    private void paintScaleAnimations(Graphics g, int originX, int originY) {
         if (!App.isFadeChecked) {
             return;
         }
 
         boolean drawBorders = shouldDrawBorders();
         Color borderColor = getBorderColor();
-        int originX = getGridOriginX();
-        int originY = getGridOriginY();
 
         for (CellAnimation cellAnimation : animatingCells) {
             if (cellAnimation.getScale() <= 1.0) {
@@ -279,7 +309,11 @@ public class GridView extends JPanel {
     }
 
     private Color getBorderColor() {
-        return new Color(
+        return borderColor;
+    }
+
+    private void refreshBorderColor() {
+        borderColor = new Color(
                 App.BLOCK_BORDER_COLOR.getRed(),
                 App.BLOCK_BORDER_COLOR.getGreen(),
                 App.BLOCK_BORDER_COLOR.getBlue(),
@@ -292,8 +326,9 @@ public class GridView extends JPanel {
             return;
         }
 
-        int x = getGridOriginX() + column * cellSize;
-        int y = getGridOriginY() + row * cellSize;
+        Insets insets = getInsets();
+        int x = getGridOriginX(insets) + column * cellSize;
+        int y = getGridOriginY(insets) + row * cellSize;
         int overflow = (int) Math.ceil(cellSize * ((CellAnimation.getPathStartScale() - 1.0) / 2.0));
         repaint(
                 x - overflow,
@@ -319,14 +354,12 @@ public class GridView extends JPanel {
         g.drawRect(scaledX, scaledY, scaledWidth - 1, scaledHeight - 1);
     }
 
-    private int getGridOriginX() {
-        Insets insets = getInsets();
+    private int getGridOriginX(Insets insets) {
         int usableWidth = getWidth() - insets.left - insets.right;
         return insets.left + Math.max(0, (usableWidth - getGridPixelWidth()) / 2);
     }
 
-    private int getGridOriginY() {
-        Insets insets = getInsets();
+    private int getGridOriginY(Insets insets) {
         int usableHeight = getHeight() - insets.top - insets.bottom;
         return insets.top + Math.max(0, (usableHeight - getGridPixelHeight()) / 2);
     }
