@@ -428,7 +428,7 @@ public class App {
         bottomControlsRow.add(cellSizeLabel);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(4, 0)));
 
-        cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 2, 100, 1));
+        cellSizeSpinner = new JSpinner(new SpinnerNumberModel(gridConfig.cellSize, 1, 100, 1));
         cellSizeSpinner.setMaximumSize(new Dimension(60, 35));
         bottomControlsRow.add(cellSizeSpinner);
         bottomControlsRow.add(Box.createRigidArea(new Dimension(8, 0)));
