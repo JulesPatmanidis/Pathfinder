@@ -1,6 +1,5 @@
 package Application;
 
-import Model.Block;
 import Model.BlockState;
 import Model.Grid;
 
@@ -86,8 +85,9 @@ public class GridView extends JPanel {
         animatingCells.clear();
         for (int row = 0; row < grid.getRows(); row++) {
             for (int col = 0; col < grid.getColumns(); col++) {
+                CellAnimation cellAnimation = cellAnimations.get(row).get(col);
                 BlockState state = grid.getBlock(row, col).getState();
-                cellAnimations.get(row).get(col).setCurrentColor(getTargetColor(state));
+                cellAnimation.setCurrentColor(getTargetColor(state));
             }
         }
         repaint();

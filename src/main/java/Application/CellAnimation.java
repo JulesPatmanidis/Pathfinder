@@ -14,9 +14,9 @@ public class CellAnimation {
     private static final double PATH_START_SCALE = 1.75;
     private final int row;
     private final int column;
-    private volatile boolean inAnimation = false;
-    private volatile double animationRatio = 0.0;
-    private volatile long animationStartNanos = 0L;
+    private boolean inAnimation = false;
+    private double animationRatio = 0.0;
+    private long animationStartNanos = 0L;
     private AnimationType animationType = AnimationType.FADE;
     private Color animationStartColor = App.BLOCK_COLOR;
     private Color animationEndColor = App.BLOCK_COLOR;
@@ -45,7 +45,7 @@ public class CellAnimation {
         return column;
     }
 
-    public synchronized boolean step() {
+    public boolean step() {
         if (!inAnimation) {
             return false;
         }
@@ -72,19 +72,21 @@ public class CellAnimation {
         return true;
     }
 
-    public synchronized Color getCurrentColor() {
+    public Color getCurrentColor() {
         return currentColor;
     }
 
-    public synchronized void setCurrentColor(Color currentColor) {
+    public void setCurrentColor(Color currentColor) {
         this.currentColor = currentColor;
+        this.scale = 1.0;
+        this.inAnimation = false;
     }
 
-    public synchronized double getScale() {
+    public double getScale() {
         return scale;
     }
 
-    public synchronized void startFadeAnimation(Color targetColor) {
+    public void startFadeAnimation(Color targetColor) {
         animationType = AnimationType.FADE;
         animationStartColor = currentColor;
         animationEndColor = targetColor;
@@ -94,7 +96,7 @@ public class CellAnimation {
         inAnimation = true;
     }
 
-    public synchronized void startPathAnimation(Color targetColor) {
+    public void startPathAnimation(Color targetColor) {
         animationType = AnimationType.PATH_SCALE;
         animationStartColor = targetColor;
         animationEndColor = targetColor;
