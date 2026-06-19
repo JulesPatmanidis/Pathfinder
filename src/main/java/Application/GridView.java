@@ -5,9 +5,9 @@ import Model.Grid;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 public class GridView extends JPanel {
@@ -20,6 +20,7 @@ public class GridView extends JPanel {
             CellAnimation cellAnimation = iterator.next();
 
             boolean stillAnimating = cellAnimation.step();
+            paintCellToBuffer(cellAnimation.getRow(), cellAnimation.getColumn());
             repaintCell(cellAnimation.getRow(), cellAnimation.getColumn());
             if (!stillAnimating) {
                 iterator.remove();
@@ -29,6 +30,8 @@ public class GridView extends JPanel {
 
     private Grid grid;
     private CellAnimation[][] cellAnimations;
+    private BufferedImage gridImage;
+    private Graphics2D gridGraphics;
     private int cellSize;
     private long fpsWindowStartNanos = System.nanoTime();
     private int timerTicksInWindow = 0;
@@ -44,6 +47,14 @@ public class GridView extends JPanel {
         this.cellSize = cellSize;
         this.cellAnimations = createCellAnimations(grid);
         animatingCells.clear();
+        if (gridGraphics != null) {
+            gridGraphics.dispose();
+        }
+
+        gridImage = new BufferedImage(getGridPixelWidth(), getGridPixelHeight(), BufferedImage.TYPE_INT_RGB);
+        gridGraphics = gridImage.createGraphics();
+
+        paintBuffer();
         revalidate();
         repaint();
     }
@@ -74,6 +85,7 @@ public class GridView extends JPanel {
             animatingCells.remove(cellAnimation);
         }
 
+        paintCellToBuffer(row, col);
         repaintCell(row, col);
     }
 
@@ -90,6 +102,7 @@ public class GridView extends JPanel {
                 cellAnimation.setCurrentColor(getTargetColor(state));
             }
         }
+        paintBuffer();
         repaint();
     }
 
@@ -134,32 +147,17 @@ public class GridView extends JPanel {
         return relativeY / cellSize;
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        if (grid == null || cellAnimations == null) {
+    private void paintBuffer() {
+        if (gridImage == null || gridGraphics == null || grid == null || cellAnimations == null) {
             return;
         }
 
-        // Only repaint "dirty" rectangles (bounding box)
-        Rectangle clip = g.getClipBounds();
-        int originX = getGridOriginX();
-        int originY = getGridOriginY();
-        int gridPixelWidth = getGridPixelWidth();
-        int gridPixelHeight = getGridPixelHeight();
-
-        int startCol = Math.max(0, (clip.x - originX) / cellSize);
-        int endCol = Math.min(grid.getColumns() - 1, (clip.x + clip.width - originX - 1) / cellSize);
-        int startRow = Math.max(0, (clip.y - originY) / cellSize);
-        int endRow = Math.min(grid.getRows() - 1, (clip.y + clip.height - originY - 1) / cellSize);
-
-        if (clip.x + clip.width <= originX
-                || clip.y + clip.height <= originY
-                || clip.x >= originX + gridPixelWidth
-                || clip.y >= originY + gridPixelHeight) {
-            return;
-        }
+        int originX = 0;
+        int originY = 0;
+        int startRow = 0;
+        int endRow = grid.getRows() - 1;
+        int startCol = 0;
+        int endCol = grid.getColumns() - 1;
 
         for (int row = startRow; row <= endRow; row++) {
             int y = originY + row * cellSize;
@@ -167,37 +165,83 @@ public class GridView extends JPanel {
                 CellAnimation cellAnimation = cellAnimations[row][col];
                 int x = originX + col * cellSize;
 
-                g.setColor(cellAnimation.getCurrentColor());
-                g.fillRect(x, y, cellSize, cellSize);
+                gridGraphics.setColor(cellAnimation.getCurrentColor());
+                gridGraphics.fillRect(x, y, cellSize, cellSize);
             }
         }
 
-        boolean drawBorders = cellSize > 6;
-        Color borderColor = new Color(
-                App.BLOCK_BORDER_COLOR.getRed(),
-                App.BLOCK_BORDER_COLOR.getGreen(),
-                App.BLOCK_BORDER_COLOR.getBlue(),
-                160
-        );
+        if (shouldDrawBorders()) {
+            drawGridLines(gridGraphics, getBorderColor(), originX, originY, startRow, endRow, startCol, endCol);
+        }
+    }
 
-        if (drawBorders) {
-            drawGridLines(g, borderColor, originX, originY, startRow, endRow, startCol, endCol);
+    private void paintCellToBuffer(int row, int col) {
+        if (gridImage == null || gridGraphics == null || cellAnimations == null
+                || row < 0 || row >= cellAnimations.length
+                || col < 0 || col >= cellAnimations[row].length) {
+            return;
         }
 
-        if (App.isFadeChecked) {
-            for (CellAnimation cellAnimation : animatingCells) {
-                if (cellAnimation.getScale() <= 1.0) {
-                    continue;
-                }
-                int x = originX + cellAnimation.getColumn() * cellSize;
-                int y = originY + cellAnimation.getRow() * cellSize;
-                g.setColor(cellAnimation.getCurrentColor());
-                fillCell(g, x, y, cellAnimation.getScale());
-                g.setColor(borderColor);
+        Graphics g = gridGraphics;
+        int x = col * cellSize;
+        int y = row * cellSize;
 
-                if (drawBorders) {
-                    drawCellBorder(g, x, y, cellAnimation.getScale());
-                }
+        g.setColor(cellAnimations[row][col].getCurrentColor());
+        g.fillRect(x, y, cellSize, cellSize);
+
+        if (shouldDrawBorders()) {
+            g.setColor(getBorderColor());
+            g.drawLine(x, y, x + cellSize, y);
+            g.drawLine(x, y + cellSize, x + cellSize, y + cellSize);
+            g.drawLine(x, y, x, y + cellSize);
+            g.drawLine(x + cellSize, y, x + cellSize, y + cellSize);
+        }
+    }
+
+    @Override
+    public void removeNotify() {
+        if (gridGraphics != null) {
+            gridGraphics.dispose();
+            gridGraphics = null;
+        }
+        super.removeNotify();
+    }
+
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        if (gridImage == null) {
+            return;
+        }
+
+        g.drawImage(gridImage, getGridOriginX(), getGridOriginY(), null);
+        paintScaleAnimations(g);
+    }
+
+    private void paintScaleAnimations(Graphics g) {
+        if (!App.isFadeChecked) {
+            return;
+        }
+
+        boolean drawBorders = shouldDrawBorders();
+        Color borderColor = getBorderColor();
+        int originX = getGridOriginX();
+        int originY = getGridOriginY();
+
+        for (CellAnimation cellAnimation : animatingCells) {
+            if (cellAnimation.getScale() <= 1.0) {
+                continue;
+            }
+            int x = originX + cellAnimation.getColumn() * cellSize;
+            int y = originY + cellAnimation.getRow() * cellSize;
+            g.setColor(cellAnimation.getCurrentColor());
+            fillCell(g, x, y, cellAnimation.getScale());
+
+            if (drawBorders) {
+                g.setColor(borderColor);
+                drawCellBorder(g, x, y, cellAnimation.getScale());
             }
         }
     }
@@ -228,6 +272,19 @@ public class GridView extends JPanel {
             int y = originY + row * cellSize;
             g.drawLine(startX, y, endX, y);
         }
+    }
+
+    private boolean shouldDrawBorders() {
+        return cellSize > 6;
+    }
+
+    private Color getBorderColor() {
+        return new Color(
+                App.BLOCK_BORDER_COLOR.getRed(),
+                App.BLOCK_BORDER_COLOR.getGreen(),
+                App.BLOCK_BORDER_COLOR.getBlue(),
+                160
+        );
     }
 
     private void repaintCell(int row, int column) {
