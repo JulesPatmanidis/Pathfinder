@@ -11,15 +11,10 @@ import java.util.Map;
 
 abstract class AbstractMazeGenerator implements MazeGenerator {
 
-    private static final List<List<Integer>> MAZE_DISPLACEMENT_MATRIX = List.of(
-            List.of(-2, 0),
-            List.of(0, -2),
-            List.of(2, 0),
-            List.of(0, 2)
-    );
+    private static final int[][] MAZE_DISPLACEMENT_MATRIX = {{-2, 0}, {0, -2}, {2, 0}, {0, 2}};
 
     protected void fillWithWalls(Grid grid, GridChangeListener listener) {
-        for (List<Block> row : grid.getBlockList()) {
+        for (Block[] row : grid.getBlockList()) {
             for (Block block : row) {
                 markWall(block, listener);
             }
@@ -35,11 +30,11 @@ abstract class AbstractMazeGenerator implements MazeGenerator {
         int row = block.getRow();
         int column = block.getColumn();
 
-        for (List<Integer> vector : MAZE_DISPLACEMENT_MATRIX) {
-            int neighbourRow = row + vector.get(0);
-            int neighbourColumn = column + vector.get(1);
-            int pathRow = row + (vector.get(0) / 2);
-            int pathColumn = column + (vector.get(1) / 2);
+        for (int[] vector : MAZE_DISPLACEMENT_MATRIX) {
+            int neighbourRow = row + vector[0];
+            int neighbourColumn = column + vector[1];
+            int pathRow = row + (vector[0] / 2);
+            int pathColumn = column + (vector[1] / 2);
 
             if (isValidNeighbour(grid, neighbourRow, neighbourColumn)) {
                 neighbours.put(

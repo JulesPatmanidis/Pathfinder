@@ -17,23 +17,11 @@ public abstract class Pathfinder implements Runnable {
      * CONSTANTS
      **/
 
-    public static final List<List<Integer>> DISPLACEMENT_MATRIX_1 = List.of(
-            List.of(-1, 0),
-            List.of(0, -1),
-            List.of(1, 0),
-            List.of(0, 1),
-            List.of(-1, -1),
-            List.of(1, 1),
-            List.of(-1, 1),
-            List.of(1, -1)
-    );
+    public static final int[][] DISPLACEMENT_MATRIX_1 = {
+            {-1,0}, {0, -1}, {1,0}, {0,1}, {-1, -1}, {1, 1}, {-1, 1}, {1, -1}
+    };
 
-    public static final List<List<Integer>> DISPLACEMENT_MATRIX_2 = List.of(
-            List.of(-1, 0),
-            List.of(0, -1),
-            List.of(1, 0),
-            List.of(0, 1)
-    );
+    public static final int[][] DISPLACEMENT_MATRIX_2 = {{-1,0}, {0, -1}, {1,0}, {0,1}};
 
     /**
      * INSTANCE VARIABLES
@@ -41,7 +29,7 @@ public abstract class Pathfinder implements Runnable {
 
     private Block start;
     private Block end;
-    private List<List<Block>> blocksList;
+    private Block[][] blocksList;
     private boolean moveDiagonally;
     private GridChangeListener listener = gridEvent -> {};
     private volatile boolean cancelled = false;
@@ -60,13 +48,13 @@ public abstract class Pathfinder implements Runnable {
         int row = parentBlock.getRow();
         int column = parentBlock.getColumn();
 
-        List<List<Integer>> displacement_matrix = (canMoveDiagonally()) ? DISPLACEMENT_MATRIX_1 : DISPLACEMENT_MATRIX_2;
-        for (List<Integer> vector : displacement_matrix) {
-            int tempRow = vector.get(0);
-            int tempColumn = vector.get(1);
+        int[][] displacement_matrix = (canMoveDiagonally()) ? DISPLACEMENT_MATRIX_1 : DISPLACEMENT_MATRIX_2;
+        for (int[] vector : displacement_matrix) {
+            int tempRow = vector[0];
+            int tempColumn = vector[1];
 
             if (isValidNeighbour(row + tempRow, column + tempColumn)) {
-                Block currentBlock = getBlocks().get(row + tempRow).get(column + tempColumn);
+                Block currentBlock = getBlocks()[row + tempRow][column + tempColumn];
                 if (currentBlock.isWalkable()) {
                     neighbours.add(currentBlock);
                 }
@@ -75,11 +63,11 @@ public abstract class Pathfinder implements Runnable {
         return neighbours;
     }
 
-    public void setBlocksList(List<List<Block>> blocksList) {
+    public void setBlocksList(Block[][] blocksList) {
         this.blocksList = blocksList;
     }
 
-    public List<List<Block>> getBlocks() {
+    public Block[][] getBlocks() {
         return blocksList;
     }
 
@@ -121,15 +109,15 @@ public abstract class Pathfinder implements Runnable {
     }
 
     private boolean isValidNeighbour(int row, int column) {
-        return ((row >= 0 && row < getBlocks().size()) && (column >= 0 && column < getBlocks().getFirst().size()));
+        return ((row >= 0 && row < getBlocks().length) && (column >= 0 && column < getBlocks()[0].length));
     }
 
     public boolean[][] initializeVisited() {
-        if (blocksList == null || blocksList.isEmpty()) {
+        if (blocksList == null || blocksList.length == 0) {
             throw new IllegalStateException("Blocks list must be initialized before creating visited array.");
         }
-        int height = blocksList.size();
-        int width = blocksList.getFirst().size();
+        int height = blocksList.length;
+        int width = blocksList[0].length;
         boolean[][] array = new boolean[height][width];
         Arrays.stream(array).forEach(x -> Arrays.fill(x, false));
         return array;

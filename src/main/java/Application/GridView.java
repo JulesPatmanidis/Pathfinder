@@ -28,7 +28,7 @@ public class GridView extends JPanel {
     });
 
     private Grid grid;
-    private List<List<CellAnimation>> cellAnimations;
+    private CellAnimation[][] cellAnimations;
     private int cellSize;
     private long fpsWindowStartNanos = System.nanoTime();
     private int timerTicksInWindow = 0;
@@ -48,19 +48,19 @@ public class GridView extends JPanel {
         repaint();
     }
 
-    private List<List<CellAnimation>> createCellAnimations(Grid grid) {
-        List<List<CellAnimation>> cellAnimations = new java.util.ArrayList<>();
-        for (int row = 0; row < grid.getRows(); row++) {
-            cellAnimations.add(row, new java.util.ArrayList<>());
-            for (int col = 0; col < grid.getColumns(); col++) {
-                cellAnimations.get(row).add(col, new CellAnimation(row, col));
+    private CellAnimation[][] createCellAnimations(Grid grid) {
+        CellAnimation[][] cellAnimations = new CellAnimation[grid.getRows()][grid.getColumns()];
+
+        for (int row = 0; row < cellAnimations.length; row++) {
+            for (int col = 0; col < cellAnimations[0].length; col++) {
+                cellAnimations[row][col] = new CellAnimation(row, col);
             }
         }
         return cellAnimations;
     }
 
     public void applyBlockChange(int row, int col, BlockState state, boolean animate) {
-        CellAnimation cellAnimation = cellAnimations.get(row).get(col);
+        CellAnimation cellAnimation = cellAnimations[row][col];
         Color targetColor = getTargetColor(state);
 
         if (animate && App.isFadeChecked && state == BlockState.PATH) {
@@ -85,7 +85,7 @@ public class GridView extends JPanel {
         animatingCells.clear();
         for (int row = 0; row < grid.getRows(); row++) {
             for (int col = 0; col < grid.getColumns(); col++) {
-                CellAnimation cellAnimation = cellAnimations.get(row).get(col);
+                CellAnimation cellAnimation = cellAnimations[row][col];
                 BlockState state = grid.getBlock(row, col).getState();
                 cellAnimation.setCurrentColor(getTargetColor(state));
             }
@@ -164,7 +164,7 @@ public class GridView extends JPanel {
         for (int row = startRow; row <= endRow; row++) {
             int y = originY + row * cellSize;
             for (int col = startCol; col <= endCol; col++) {
-                CellAnimation cellAnimation = cellAnimations.get(row).get(col);
+                CellAnimation cellAnimation = cellAnimations[row][col];
                 int x = originX + col * cellSize;
 
                 g.setColor(cellAnimation.getCurrentColor());

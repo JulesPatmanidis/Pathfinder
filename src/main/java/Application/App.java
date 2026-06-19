@@ -586,7 +586,7 @@ public class App {
         Arrays.stream(centrePanel.getMouseListeners()).forEach(centrePanel::removeMouseListener);
         Arrays.stream(centrePanel.getMouseMotionListeners()).forEach(centrePanel::removeMouseMotionListener);
         centrePanel.resetKeyboardActions();
-        List<List<Block>> blockList = createBlockGrid();
+        Block[][] blockList = createBlockGrid();
         grid = new Grid(blockList);
 
         centrePanel.setGrid(grid, gridConfig.cellSize);
@@ -649,13 +649,11 @@ public class App {
     /**
      * Creates a 2D grid of Block objects and adds mouse listeners to the centrePanel to handle block selection.
      */
-    private List<List<Block>> createBlockGrid() {
-        List<List<Block>> tempList = new ArrayList<>();
-        for (int i = 0; i < gridConfig.rows; i++) {
-            tempList.add(i, new ArrayList<>());
-            for (int j = 0; j < gridConfig.cols; j++) {
-                Block current = new Block(i, j);
-                tempList.get(i).add(j, current);
+    private Block[][] createBlockGrid() {
+        Block[][] tempList = new Block[gridConfig.rows][gridConfig.cols];
+        for (int row = 0; row < gridConfig.rows; row++) {
+            for (int col = 0; col < gridConfig.cols; col++) {
+                tempList[row][col] = new Block(row, col);
             }
         }
 
@@ -665,12 +663,12 @@ public class App {
                 int col = centrePanel.getColumnAtX(e.getX());
                 int row = centrePanel.getRowAtY(e.getY());
 
-                List<List<Block>> blocks = pathfinder.getBlocks();
-                if (row < 0 || row >= blocks.size() || col < 0 || col >= blocks.get(row).size()) {
+                Block[][] blocks = pathfinder.getBlocks();
+                if (row < 0 || row >= blocks.length || col < 0 || col >= blocks[row].length) {
                     return;
                 }
 
-                Block clickedBlock = blocks.get(row).get(col);
+                Block clickedBlock = blocks[row][col];
                 clickCount++;
                 if (clickCount == 1) {
                     pathfinder.setStart(clickedBlock);
@@ -762,9 +760,9 @@ public class App {
         }
         int col = centrePanel.getColumnAtX(e.getX());
         int row = centrePanel.getRowAtY(e.getY());
-        List<List<Block>> blocks = pathfinder.getBlocks();
-        if (row >= 0 && row < blocks.size() && col >= 0 && col < blocks.get(row).size()) {
-            Block block = blocks.get(row).get(col);
+        Block[][] blocks = pathfinder.getBlocks();
+        if (row >= 0 && row < blocks.length && col >= 0 && col < blocks[row].length) {
+            Block block = blocks[row][col];
             if (block == pathfinder.getStart() || block == pathfinder.getEnd()) {
                 return;
             }

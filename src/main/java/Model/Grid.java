@@ -4,21 +4,21 @@ import java.util.List;
 
 public class Grid {
 
-    private List<List<Block>> blockList;
+    private Block[][] blockList;
     private int columns;
     private int rows;
 
-    public Grid(List<List<Block>> blockList) {
+    public Grid(Block[][] blockList) {
         this.blockList = blockList;
-        this.rows = blockList.size();
-        this.columns = blockList.getFirst().size();
+        this.rows = blockList.length;
+        this.columns = blockList[0].length;
     }
 
-    public List<List<Block>> getBlockList() {
+    public Block[][] getBlockList() {
         return blockList;
     }
 
-    public void setBlockList(List<List<Block>> blockList) {
+    public void setBlockList(Block[][] blockList) {
         this.blockList = blockList;
     }
 
@@ -31,10 +31,10 @@ public class Grid {
     }
 
     public Block getBlock(int row, int col) {
-        if (row >= blockList.size() || col >= blockList.get(row).size()) {
+        if (row >= blockList.length || col >= blockList[row].length) {
             return null;
         }
 
-        return blockList.get(row).get(col);
+        return blockList[row][col];
     }
 }
