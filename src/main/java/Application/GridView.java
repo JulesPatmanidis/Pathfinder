@@ -13,21 +13,6 @@ import java.util.List;
 public class GridView extends JPanel {
 
     private final List<CellAnimation> animatingCells = new ArrayList<>();
-    private final Timer repaintTimer = new Timer(16, event -> {
-        updateFpsCounter();
-        Iterator<CellAnimation> iterator = animatingCells.iterator();
-        while (iterator.hasNext()) {
-            CellAnimation cellAnimation = iterator.next();
-
-            boolean stillAnimating = cellAnimation.step();
-            paintCellToBuffer(cellAnimation.getRow(), cellAnimation.getColumn());
-            repaintCell(cellAnimation.getRow(), cellAnimation.getColumn());
-            if (!stillAnimating) {
-                cellAnimation.setQueuedForAnimation(false);
-                iterator.remove();
-            }
-        }
-    });
 
     private Grid grid;
     private CellAnimation[][] cellAnimations;
@@ -42,6 +27,45 @@ public class GridView extends JPanel {
             App.BLOCK_BORDER_COLOR.getGreen(),
             App.BLOCK_BORDER_COLOR.getBlue(),
             160);
+
+    private final Timer repaintTimer = new Timer(16, event -> {
+        updateFpsCounter();
+        Insets insets = getInsets();
+        int originX = getGridOriginX(insets);
+        int originY = getGridOriginY(insets);
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        int pathOverflow = getAnimationOverflow();
+
+        Iterator<CellAnimation> iterator = animatingCells.iterator();
+        while (iterator.hasNext()) {
+            CellAnimation cellAnimation = iterator.next();
+
+            boolean stillAnimating = cellAnimation.step();
+            paintCellToBuffer(cellAnimation.getRow(), cellAnimation.getColumn());
+
+            int x = originX + cellAnimation.getColumn() * cellSize;
+            int y = originY + cellAnimation.getRow() * cellSize;
+            int overflow = cellAnimation.getScale() > 1.0 ? pathOverflow : 0;
+
+            minX = Math.min(minX, x - overflow);
+            minY = Math.min(minY, y - overflow);
+            maxX = Math.max(maxX, x + cellSize + overflow);
+            maxY = Math.max(maxY, y + cellSize + overflow);
+
+            if (!stillAnimating) {
+                cellAnimation.setQueuedForAnimation(false);
+                iterator.remove();
+            }
+        }
+        // If anything was painted
+        if (minX != Integer.MAX_VALUE) {
+            repaint(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+    });
 
     public GridView() {
         super();
@@ -329,13 +353,17 @@ public class GridView extends JPanel {
         Insets insets = getInsets();
         int x = getGridOriginX(insets) + column * cellSize;
         int y = getGridOriginY(insets) + row * cellSize;
-        int overflow = (int) Math.ceil(cellSize * ((CellAnimation.getPathStartScale() - 1.0) / 2.0));
+        int overflow = cellAnimations[row][column].getScale() > 1.0 ? getAnimationOverflow() : 0;
         repaint(
                 x - overflow,
                 y - overflow,
                 cellSize + (2 * overflow) + 1,
                 cellSize + (2 * overflow) + 1
         );
+    }
+
+    private int getAnimationOverflow() {
+        return (int) Math.ceil(cellSize * ((CellAnimation.getPathStartScale() - 1.0) / 2.0));
     }
 
     private void fillCell(Graphics g, int x, int y, double scale) {
