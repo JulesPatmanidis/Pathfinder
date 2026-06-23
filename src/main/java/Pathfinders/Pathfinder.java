@@ -135,6 +135,9 @@ public abstract class Pathfinder implements Runnable {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             throw new CancellationException();
         }
+        if (block == getStart() || block == getEnd()) {
+            return;
+        }
         block.makeWalked();
         listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), true));
     }
@@ -142,6 +145,9 @@ public abstract class Pathfinder implements Runnable {
     protected void markNeighbour(Block block) {
         if (cancelled || Thread.currentThread().isInterrupted()) {
             throw new CancellationException();
+        }
+        if (block == getStart() || block == getEnd()) {
+            return;
         }
         block.makeNeighbour();
         listener.blockChanged(new GridEvent(block.getRow(), block.getColumn(), block.getState(), false));

@@ -1,6 +1,8 @@
 # Pathfinder
 
-This project is a Java application made for practicing pathfinding algorithms.
+Pathfinder is a Java program for practicing algorithms through interactive pathfinding and maze visualization.
+
+![A* pathfinding through a generated maze](docs/astar2.png)
 
 Download the latest Pathfinder.jar from the GitHub Releases page, then run it with:
 
@@ -8,17 +10,33 @@ Download the latest Pathfinder.jar from the GitHub Releases page, then run it wi
 java -jar Pathfinder.jar
 ```
 
-Currently implemented features:
-  - Pathfinding algorithms:
-    - A star
-    - Dijkstra
-    - Best First Search
-    - Breadth First Search
-    - Depth First Search (not very useful)
-    - Worst First Search (inverse of Best First Search)
-  - Maze generation algorithms:
-    - Randomized DFS
-    - Randomized Prim's
+## Features
+
+- Visualize pathfinding algorithms on an interactive grid
+- Set start and end points, then draw walls by clicking and dragging
+- Generate mazes before running an algorithm
+- Tune playback speed, cell size, diagonal movement, fade animation, and color palettes
+
+### Pathfinding Algorithms
+
+- A*
+- Dijkstra
+- Best First Search
+- Breadth First Search
+- Depth First Search
+- Worst First Search 
+
+### Maze Generators
+
+- Recursive Backtracking
+- Randomized Prim's
+- Aldous-Broder
+
+## Screenshots
+
+![A* search frontier](docs/astar1.png)
+
+![Maze generation with pathfinding](docs/maze1.png)
 
 ## Development
 
