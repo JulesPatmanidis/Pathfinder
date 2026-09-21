@@ -17,6 +17,10 @@ dependencies {
     runtimeOnly "com.jetbrains.intellij.java:java-gui-forms-rt:252.23892.525"
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+
 // Import Jar class explicitly
 import org.gradle.api.tasks.bundling.Jar
 
