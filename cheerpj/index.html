@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pathfinder</title>
+    <script src="https://cjrtnc.leaningtech.com/4.3/loader.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+      }
+
+      #app {
+        width: 100vw;
+        height: 100svh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      (async function () {
+        await cheerpjInit({ version: 17 });
+        cheerpjCreateDisplay(-1, -1, document.getElementById("app"));
+
+        const jarUrl = new URL("./Pathfinder.jar", window.location.href);
+        await cheerpjRunJar(`/app${jarUrl.pathname}`);
+      })().catch(console.error);
+    </script>
+  </body>
+</html>
