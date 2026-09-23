@@ -10,6 +10,11 @@ Download the latest Pathfinder.jar from the GitHub Releases page, then run it wi
 java -jar Pathfinder.jar
 ```
 
+You can also try out a web version of this app [here!](https://julespatmanidis.github.io/Pathfinder). 
+
+Keep in mind that the web version is created with cheerpj, which significantly degrades the performance the app.
+I suggest running it through the jar file instead.
+
 ## Features
 
 - Visualize pathfinding algorithms on an interactive grid
